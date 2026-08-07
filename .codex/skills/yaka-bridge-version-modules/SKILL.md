@@ -27,6 +27,9 @@ auditable et reproductible.
   `modules.lock.json`, déploiement. Ce n'est pas l'atelier de coding quotidien.
 - Repo module = zone de travail bornée. Un contributeur module ne doit pouvoir
   casser que son module.
+- Repo service = obligatoire par défaut pour une vraie app web indépendante :
+  UI produit, Dockerfile, Coolify, Supabase dédié, healthcheck et callback
+  Bridge. Utiliser `yaka-bridge-create-service-module` dans ce cas.
 - Template public `yaka-bridge` = structure générique et exemples anonymisés
   uniquement.
 - Activation d'un module catalogue déjà stable = pas de nouveau repo module si
@@ -61,6 +64,7 @@ Décide la topologie avant de coder :
 | --- | --- |
 | Nouveau client | Créer ou vérifier `<clientSlug>-erp`. |
 | Nouveau module client | Créer ou vérifier `<clientSlug>-module-<moduleId>`. |
+| Nouveau service web client | Créer ou vérifier `<clientSlug>-service-<serviceId>` ou repo module/service privé dédié. |
 | Non-développeur impliqué | Repo module séparé obligatoire. |
 | Module catalogue déjà stable | Mettre à jour le repo client et `modules.lock.json`. |
 | Amélioration structurelle générique | PR dans `yaka-bridge`, puis port client. |

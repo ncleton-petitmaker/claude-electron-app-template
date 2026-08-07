@@ -107,7 +107,7 @@ export function BridgeStatusProvider({ children }: { children: ReactNode }) {
     const now = Date.now();
     if (now - lastAutoWakeAtRef.current >= AUTO_WAKE_COOLDOWN_MS) {
       lastAutoWakeAtRef.current = now;
-      openBridgeProtocol();
+      openBridgeProtocol({ silent: true });
       return;
     }
     if (firstLaunchHandledRef.current || hasBridgeWizardBeenSeen()) return;
@@ -302,7 +302,7 @@ function BridgeSetupModal({ onClose }: { onClose: () => void }) {
                 <p>
                   Après installation, ouvre Bridge pour réactiver le lien système et le service local.
                 </p>
-                <button type="button" className="subtle bridge-secondary-action" onClick={openBridgeProtocol}>
+                <button type="button" className="subtle bridge-secondary-action" onClick={() => openBridgeProtocol()}>
                   <Icon name="external-link" size={14} />
                   Ouvrir Bridge
                 </button>
@@ -394,8 +394,14 @@ async function downloadInstaller(
   }
 }
 
-function openBridgeProtocol(): void {
-  window.location.href = "bridge://status";
+function openBridgeProtocol(options: { silent?: boolean } = {}): void {
+  const params = new URLSearchParams();
+  if (options.silent) {
+    params.set("silent", "1");
+    params.set("background", "1");
+  }
+  const suffix = params.toString();
+  window.location.href = `bridge://status${suffix ? `?${suffix}` : ""}`;
 }
 
 function installerFromConfig(config: BridgeConfig | null, platform: InstallerPlatform): BridgeInstaller {

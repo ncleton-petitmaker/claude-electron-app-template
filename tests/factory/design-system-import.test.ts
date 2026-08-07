@@ -45,11 +45,15 @@ test("design importer normalizes a raw DESIGN.md and applies it", () => {
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const systemDir = join(targetDir, "design-systems", "ocean-ops");
   const manifest = JSON.parse(readFileSync(join(systemDir, "design-system.config.json"), "utf8"));
+  const activeManifest = JSON.parse(readFileSync(join(targetDir, "design-system.config.json"), "utf8"));
   const appCss = readFileSync(join(targetDir, "app", "design-system.css"), "utf8");
   const bridgeTokens = JSON.parse(readFileSync(join(targetDir, "bridge", "design-system.json"), "utf8"));
 
   assert.equal(manifest.id, "ocean-ops");
   assert.equal(manifest.sourceKind, "custom");
+  assert.equal(manifest.brand.logoCharterVersion, "1.0.0");
+  assert.match(manifest.brand.moduleIcons.rules.join(" "), /Third-party provider logos/);
+  assert.equal(activeManifest.brand.logoCharterVersion, "1.0.0");
   assert.equal(manifest.bridge.tokens.accent, "#0f6d8f");
   assert.match(appCss, /--on-accent:/);
   assert.match(appCss, /--surface: #ffffff;/);

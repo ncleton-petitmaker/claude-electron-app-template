@@ -47,9 +47,9 @@ export default function DashboardPage() {
             <span className="eyebrow">Pilotage</span>
             <h1>Bridge ERP Demo</h1>
           </div>
-          <Link href="/runs" className="btn primary">
+          <Link href="/connaissance" className="btn primary">
             <Icon name="sparkles" size={14} />
-            <span>Assistant</span>
+            <span>Connaissance</span>
           </Link>
         </header>
 
@@ -81,7 +81,7 @@ export default function DashboardPage() {
           ) : (
             <div className="dashboard-run-table">
               {runs.slice(0, 8).map((run) => (
-                <Link href="/runs" key={run.id} className="dashboard-run-row">
+                <Link href="/connaissance" key={run.id} className="dashboard-run-row">
                   <span className="num">{new Date(run.startedAt).toLocaleDateString("fr-FR")}</span>
                   <strong>{run.tag ?? "analyse"}</strong>
                   <span>{run.status}</span>

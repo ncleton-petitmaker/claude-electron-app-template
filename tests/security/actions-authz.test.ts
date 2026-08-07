@@ -71,6 +71,66 @@ test("agent run rejects cloud members without codex run scope", async () => {
   );
 });
 
+test("local ai Jan status is available in local daemon context", async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), "yaka-local-ai-action-"));
+  const output = await callAction("local_ai.jan.status", { ...baseContext, dataDir }, {
+    sourceDir: join(dataDir, "missing-jan-upstream"),
+    worktreeDir: join(dataDir, "missing-jan-worktree"),
+  });
+  const status = output as { upstream?: { exists?: boolean }; worktree?: { exists?: boolean } };
+  assert.equal(status.upstream?.exists, false);
+  assert.equal(status.worktree?.exists, false);
+});
+
+test("local ai Jan status rejects organization members without read scope", async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), "yaka-local-ai-action-"));
+  await assert.rejects(
+    () => callAction("local_ai.jan.status", {
+      ...baseContext,
+      dataDir,
+      organizationId: "9c3b6f91-2074-4d6e-8c4a-3514da2d986d",
+      membershipRole: "member",
+      entitlements: [],
+    }, {
+      sourceDir: join(dataDir, "missing-jan-upstream"),
+      worktreeDir: join(dataDir, "missing-jan-worktree"),
+    }),
+    /scope-forbidden:service:local_ai:read/
+  );
+});
+
+test("knowledge ai source inventory is available in local daemon context", async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), "yaka-knowledge-ai-action-"));
+  const output = await callAction("knowledge_ai.source.inventory", { ...baseContext, dataDir }, {
+    sourceDir: join(dataDir, "missing-connaissance-source"),
+  });
+  const inventory = output as { exists?: boolean; uiSource?: string; rejectedRuntimeFamilies?: string[] };
+  assert.equal(inventory.exists, false);
+  assert.equal(inventory.uiSource, "src/app-v2");
+  assert.ok(inventory.rejectedRuntimeFamilies?.length);
+});
+
+test("knowledge ai chat rejects organization members without chat scope", async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), "yaka-knowledge-ai-action-"));
+  await assert.rejects(
+    () => callAction("knowledge_ai.chat.send", {
+      ...baseContext,
+      dataDir,
+      organizationId: "9c3b6f91-2074-4d6e-8c4a-3514da2d986d",
+      membershipRole: "member",
+      entitlements: [{
+        service_id: "knowledge_ai",
+        enabled: true,
+        scopes: ["service:knowledge_ai:read"],
+      }],
+    }, {
+      message: "Bonjour",
+      provider: "lmstudio_local",
+    }),
+    /scope-forbidden:service:knowledge_ai:chat/
+  );
+});
+
 test("app config action does not expose a provider picker contract", async () => {
   const dataDir = mkdtempSync(join(tmpdir(), "yaka-app-config-action-"));
   const output = await callAction("appConfig.get", { ...baseContext, dataDir }, {});

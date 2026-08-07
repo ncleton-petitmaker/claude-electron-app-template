@@ -14,6 +14,33 @@ Objectif : livrer un module production-ready, agentic-first, compatible Bridge,
 auditable humainement, et réutilisable dans le template public sans donnée
 client.
 
+## Stop architecture obligatoire
+
+Avant toute ligne de code, lire `docs/service-module-architecture.md` et
+classer explicitement le besoin :
+
+- **module embarqué** : petite surface interne au shell Bridge ;
+- **service web indépendant** : app produit avec UI quotidienne, runtime propre,
+  domaine/Coolify propre, maintenance indépendante ;
+- **provider technique** : couche de routage, runtime, inspection ou config, pas
+  une expérience produit.
+
+Si le besoin contient chat, agents, fichiers, projets, historique, runtime IA,
+OCR, embeddings, ou une UI reprise depuis une app existante/open source, la
+réponse par défaut est **service web indépendant**. Dans ce cas, charger et
+appliquer aussi `yaka-bridge-create-service-module`. Dans ce cas :
+
+- `modules/<moduleId>/` ne contient que le contrat Bridge : manifest, scopes,
+  actions, events, migrations, jobs, admin/health/launch ;
+- l'UI produit vit dans `services/<serviceId>/` ou dans un repo service séparé ;
+- `app/admin/<moduleId>/` ne contient que la configuration/admin ;
+- `app/<service>/` ne contient au plus qu'un launcher/redirect/iframe contrôlée,
+  jamais la navigation produit complète ;
+- le service doit avoir son propre Coolify, ses URLs, ses redirect URLs OAuth et
+  son enregistrement `bridge_services`.
+
+Ne jamais confondre une route admin Bridge avec l'application produit.
+
 ## Préflight versioning obligatoire
 
 Avant d'écrire du code pour un module client, utilise d'abord
@@ -51,7 +78,9 @@ Avant d'écrire du code, pose ces questions si elles ne sont pas déjà résolue
 9. Le module doit-il respecter le design system actif ou existe-t-il une
    contrainte design client à garder privée ?
 10. Le préflight `yaka-bridge-version-modules` a-t-il confirmé le repo, les
-   droits, la branche et la version cible ?
+    droits, la branche et la version cible ?
+11. Le besoin est-il `embedded-module`, `external-service` ou
+    `technical-provider`, et où vivra l'UI produit ?
 
 Si l'utilisateur demande d'avancer sans réponse complète, choisis la variante
 la plus robuste en production et documente l'hypothèse dans le journal de
@@ -65,6 +94,9 @@ travail.
 - Les ids techniques restent en anglais ; les labels UI sont bilingues.
 - Chaque module possède `modules/<moduleId>/module.config.json` comme contrat
   canonique.
+- Un module marqué `deployment.kind = external-service` ne doit pas avoir son UI
+  produit copiée dans `app/` ou `app/admin/`; Bridge n'expose qu'un launcher,
+  une config admin et les contrats d'action.
 - Chaque manifest module possède une version SemVer.
 - Chaque module consomme le design system actif via tokens/classes partagés ; il
   ne crée pas sa propre charte locale.
@@ -83,6 +115,7 @@ travail.
 
 1. Lire d'abord :
    - `README.md`
+   - `docs/service-module-architecture.md`
    - `docs/module-catalog.md`
    - `docs/agentic-first.md`
    - `docs/cloud-security.md`
@@ -118,15 +151,19 @@ travail.
    - exposition MCP
    - documentation des tools utiles dans la skill de module si nécessaire
 6. Ajouter l'UI :
-   - dashboard de module
-   - pages de travail
-   - design system partagé
-   - aucun composant isolé avec style divergent
+   - pour un module embarqué : dashboard de module et pages de travail dans le
+     shell Bridge ;
+   - pour un service indépendant : UI produit dans `services/<serviceId>/` ou
+     repo service, plus launcher/config seulement côté Bridge ;
+   - design system partagé ou tokens exportés vers le service ;
+   - aucun composant isolé avec style divergent.
 7. Ajouter Bridge :
    - service id
    - scopes `service:<moduleId>:read/write/admin`
    - jobs nécessaires
    - règles d'entitlement demo
+   - si service indépendant : `base_url`, `admin_url`, `health_url`,
+     `launch_callback_url` et tickets de lancement.
 8. Ajouter tests :
    - authZ par organisation
    - scopes read/write/admin

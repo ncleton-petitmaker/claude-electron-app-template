@@ -1,7 +1,7 @@
 import type { ErpModuleManifest } from "./types";
-import { purchasingModule } from "./purchasing";
+import { knowledgeAiModule } from "./knowledge_ai";
 
-export const erpModules = [purchasingModule] satisfies ErpModuleManifest[];
+export const erpModules = [knowledgeAiModule] satisfies ErpModuleManifest[];
 
 export function getErpModule(moduleId: string): ErpModuleManifest | undefined {
   return erpModules.find((module) => module.id === moduleId);
@@ -14,4 +14,3 @@ export function assertKnownModules(moduleIds: string[]): void {
     throw new Error(`Unknown ERP module(s): ${unknown.join(", ")}`);
   }
 }
-

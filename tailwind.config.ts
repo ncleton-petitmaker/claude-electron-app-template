@@ -9,6 +9,7 @@ const config: Config = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./modules/**/*.{js,ts,jsx,tsx,mdx}",
+    "./services/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   // Shared resets live in app/globals.css; design values live in app/design-system.css.
   corePlugins: { preflight: false },

@@ -40,6 +40,24 @@ const SECRET_TERMS = [
   /BEGIN (?:RSA |EC |OPENSSH |)PRIVATE KEY/,
 ];
 
+const KNOWLEDGE_AI_CLOUD_TERMS = [
+  /OPENAI_API_KEY/,
+  /ANTHROPIC_API_KEY/,
+  /MISTRAL_API_KEY/,
+  /GOOGLE_API_KEY/,
+  /PERPLEXITY_API_KEY/,
+  /api\.openai\.com/i,
+  /api\.anthropic\.com/i,
+  /api\.mistral\.ai/i,
+  /generativelanguage\.googleapis\.com/i,
+  /api\.perplexity\.ai/i,
+  /from\s+["']openai["']/i,
+  /from\s+["']@anthropic-ai\/sdk["']/i,
+  /from\s+["']@mistralai\/mistralai["']/i,
+  /from\s+["']@langchain\//i,
+  /langchain\.com/i,
+];
+
 const TEXT_EXTENSIONS = new Set([
   ".ts",
   ".tsx",
@@ -101,6 +119,9 @@ for (const file of walk(ROOT)) {
   scan(rel, raw, CLIENT_TERMS, "client-name", CLIENT_TERM_ALLOWLINES);
   scan(rel, raw, SECURITY_TERMS, "security-pattern");
   scan(rel, raw, SECRET_TERMS, "secret-pattern");
+  if (isKnowledgeAiPath(rel)) {
+    scan(rel, raw, KNOWLEDGE_AI_CLOUD_TERMS, "knowledge-ai-cloud-runtime");
+  }
   if (isRuntimePath(rel) && !PROTO_ALLOW_PREFIXES.some((prefix) => rel.startsWith(prefix))) {
     scan(rel, raw, RUNTIME_PROTO_TERMS, "runtime-prototype-marker");
   }
@@ -128,6 +149,14 @@ function scan(rel, raw, patterns, kind, allowLines = []) {
 
 function isRuntimePath(rel) {
   return RUNTIME_PREFIXES.some((prefix) => rel.startsWith(prefix));
+}
+
+function isKnowledgeAiPath(rel) {
+  return rel.startsWith("modules/knowledge_ai/") ||
+    rel.startsWith("services/connaissance/") ||
+    rel.startsWith("app/connaissance/") ||
+    rel.startsWith("app/admin/knowledge-ai/") ||
+    rel === "server/knowledge-ai-runtime.ts";
 }
 
 function walk(dir, out = []) {

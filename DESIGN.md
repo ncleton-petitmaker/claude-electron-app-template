@@ -57,6 +57,19 @@ Token groups:
 - Mono is reserved for ids, counters, logs, tokens and technical references.
 - Letter spacing is zero except small uppercase eyebrow labels.
 
+## Logos and module icons
+
+- `public/app-mark.svg` is the primary app mark.
+- `public/bridge-mark.*` is the Bridge and packaged desktop mark.
+- App and Bridge marks must stay in the same visual family.
+- Module icons use the shared `Icon` component or a minimal mark built from
+  currentColor and design-system tokens.
+- Module icons must not introduce a separate palette or imitate a provider logo.
+- Third-party provider marks such as Jan or LM Studio are referenced by name
+  until license and trademark usage are audited.
+- Icon-only launchers need an accessible label and a tooltip/title. Runtime
+  launch actions must stay explicit and auditable.
+
 ## Bridge
 
 Bridge has a smaller setup UI but must use the same product identity:

@@ -1,0 +1,22 @@
+{
+  "name": "connaissance",
+  "type": "application",
+  "buildPack": "dockerfile",
+  "dockerfile": "services/connaissance/Dockerfile",
+  "port": 3200,
+  "healthcheck": {
+    "path": "/healthz",
+    "expectedStatus": 200
+  },
+  "domains": [
+    "connaissance.<client-domain>"
+  ],
+  "requiredEnvironment": [
+    "NEXT_PUBLIC_CONNAISSANCE_SERVICE_URL",
+    "BRIDGE_CONTROL_PLANE_URL",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "KNOWLEDGE_AI_PROVIDER_MODE"
+  ]
+}

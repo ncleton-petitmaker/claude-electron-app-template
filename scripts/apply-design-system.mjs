@@ -152,6 +152,7 @@ function main() {
     source: relative(targetDir, sourceDir),
     targets: manifest.targets ?? ["app", "modules", "bridge"],
     appliedFiles,
+    brand: manifest.brand ?? null,
   });
 
   console.log(`Applied design system "${id}" to ${targetDir}`);

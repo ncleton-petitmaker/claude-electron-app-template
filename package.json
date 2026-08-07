@@ -1,12 +1,13 @@
 {
   "name": "yaka-bridge",
-  "version": "0.0.70",
+  "version": "0.0.71",
   "private": true,
   "description": "Template yaka-bridge pour ERP cloud modulaire avec Supabase, Bridge local, MCP et workflows agentiques.",
   "license": "MIT",
   "workspaces": [
     "packages/*",
-    "templates/*"
+    "templates/*",
+    "services/*"
   ],
   "engines": {
     "node": ">=24"
@@ -83,6 +84,14 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts",
     "security:grep": "node scripts/security-grep.mjs",
+    "service:connaissance:dev": "npm --prefix services/connaissance run dev",
+    "service:connaissance:build": "npm --prefix services/connaissance run build",
+    "service:connaissance:typecheck": "npm --prefix services/connaissance run typecheck",
+    "service:connaissance:parity": "node scripts/knowledge-service-parity.mjs",
+    "service:connaissance:label-audit": "node scripts/knowledge-source-label-audit.mjs",
+    "service:connaissance:behavior-audit": "node scripts/knowledge-behavior-parity.mjs",
+    "service:connaissance:interactive-audit": "node scripts/knowledge-interactive-parity.mjs",
+    "service:connaissance:structural-audit": "node scripts/knowledge-structural-parity.mjs",
     "skills:sync": "node scripts/sync-codex-skills.mjs",
     "skills:check": "node scripts/sync-codex-skills.mjs --check",
     "codex:onboard": "node scripts/codex-onboard.mjs",

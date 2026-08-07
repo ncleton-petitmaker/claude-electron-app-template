@@ -1,0 +1,273 @@
+{
+  "id": "knowledge_ai",
+  "version": "0.1.0",
+  "labels": {
+    "fr": "Connaissance",
+    "en": "Knowledge AI"
+  },
+  "description": {
+    "fr": "Contrat Bridge du service Connaissance independant : scopes, actions, lancement, runtime local-only et donnees.",
+    "en": "Bridge contract for the independent Knowledge service: scopes, actions, launch, local-only runtime and data."
+  },
+  "category": "business",
+  "dataStrategy": "service-supabase",
+  "deployment": {
+    "kind": "external-service",
+    "serviceSlug": "connaissance",
+    "defaultDomainPattern": "connaissance.<client-domain>",
+    "localDevUrl": "http://localhost:3200",
+    "serviceUrlEnv": "NEXT_PUBLIC_KNOWLEDGE_AI_SERVICE_URL",
+    "healthPath": "/healthz",
+    "launchCallbackPath": "/bridge/launch",
+    "coolify": {
+      "required": true,
+      "resource": "application",
+      "config": "services/connaissance/coolify.json",
+      "dockerfile": "services/connaissance/Dockerfile"
+    },
+    "supabase": {
+      "strategy": "dedicated",
+      "sharedAllowed": false,
+      "env": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY"
+      ]
+    }
+  },
+  "routes": [
+    {
+      "path": "/connaissance",
+      "kind": "launcher",
+      "label": {
+        "fr": "Lancer Connaissance",
+        "en": "Launch Knowledge"
+      }
+    },
+    {
+      "path": "/admin/knowledge-ai",
+      "kind": "admin",
+      "label": {
+        "fr": "Connaissance",
+        "en": "Knowledge AI"
+      }
+    }
+  ],
+  "scopes": [
+    "erp:core:read",
+    "erp:events:publish",
+    "erp:events:consume",
+    "service:knowledge_ai:read",
+    "service:knowledge_ai:write",
+    "service:knowledge_ai:ingest",
+    "service:knowledge_ai:chat",
+    "service:knowledge_ai:agents",
+    "service:knowledge_ai:admin",
+    "codex:run"
+  ],
+  "actions": [
+    { "id": "knowledge_ai.runtime.status", "label": "Verifier les moteurs IA locaux", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.source.inventory", "label": "Inventorier la source Connaissance", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.auth.otp.send", "label": "Envoyer un code de connexion", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.auth.otp.verify", "label": "Verifier un code de connexion", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.auth.session.refresh", "label": "Rafraichir la session Bridge", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.auth.user.get", "label": "Lire l'utilisateur Bridge", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.auth.company.get", "label": "Lire l'organisation Bridge", "requiredScopes": ["service:knowledge_ai:read"] },
+    {
+      "id": "knowledge_ai.chat.send",
+      "label": "Envoyer un message Connaissance",
+      "requiredScopes": ["service:knowledge_ai:chat"],
+      "agentRouting": {
+        "mode": "local",
+        "privacy": "local-only",
+        "reason": "Le nouveau mode Connaissance interdit les appels IA externes."
+      }
+    },
+    {
+      "id": "knowledge_ai.chat.stream",
+      "label": "Streamer une reponse Connaissance",
+      "requiredScopes": ["service:knowledge_ai:chat"],
+      "agentRouting": {
+        "mode": "local",
+        "privacy": "local-only",
+        "reason": "Le streaming passe par Bridge Codex, LM Studio local ou DGX Spark LAN."
+      }
+    },
+    { "id": "knowledge_ai.citation.open", "label": "Ouvrir une citation de reponse", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.web_source.open", "label": "Ouvrir une source web de reponse", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.conversation.list", "label": "Lister les conversations", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.conversation.load", "label": "Charger une conversation", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.conversation.archive", "label": "Archiver une conversation", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.conversation.delete", "label": "Supprimer une conversation", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.conversation.clear", "label": "Vider la conversation active", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.conversation.context.set", "label": "Changer le contexte du chat", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.conversation.options.set", "label": "Changer les options du chat", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.shortcut.list", "label": "Lister les raccourcis", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.shortcut.create", "label": "Creer un raccourci", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.shortcut.update", "label": "Modifier un raccourci", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.shortcut.delete", "label": "Supprimer un raccourci", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.shortcut.reorder", "label": "Reordonner les raccourcis", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.shortcut.track_usage", "label": "Tracer l'usage d'un raccourci", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.shortcut.create_defaults", "label": "Creer les raccourcis par defaut", "requiredScopes": ["service:knowledge_ai:admin"] },
+    { "id": "knowledge_ai.knowledge.list", "label": "Lister les connaissances", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.knowledge.get", "label": "Lire une connaissance", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.knowledge.update", "label": "Modifier une connaissance", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.knowledge.delete", "label": "Supprimer une connaissance", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.knowledge.associate", "label": "Associer une connaissance", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.knowledge.replace_file", "label": "Remplacer un fichier source", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.knowledge.version.list", "label": "Lister les versions", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.knowledge.version.restore", "label": "Restaurer une version", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.knowledge.group.list", "label": "Lister les groupes", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.knowledge.group.create", "label": "Creer un groupe", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.knowledge.group.update", "label": "Modifier un groupe", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.knowledge.group.delete", "label": "Supprimer un groupe", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.knowledge.search", "label": "Rechercher dans les connaissances", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.knowledge.filter.set", "label": "Appliquer les filtres", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.knowledge.scope.set", "label": "Definir le perimetre", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.knowledge.processing.add", "label": "Ajouter un processing", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.knowledge.processing.remove", "label": "Terminer un processing", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.upload.prepare", "label": "Preparer un ajout de fichier", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.upload.text", "label": "Importer du texte", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.upload.file", "label": "Importer un fichier", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.upload.url", "label": "Importer une URL", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.upload.youtube", "label": "Importer YouTube", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.upload.linkedin", "label": "Importer LinkedIn", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.upload.twitter", "label": "Importer X", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.upload.spreadsheet", "label": "Importer un tableur", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.upload.google_sheets", "label": "Importer Google Sheets via Bridge", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.questionnaire.generate", "label": "Generer un questionnaire", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.questionnaire.share", "label": "Partager un questionnaire", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.structured.schema.get", "label": "Lire le schema structure", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.structured.data.get", "label": "Lire les donnees structurees", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.structured.fetch", "label": "Charger les donnees GenBI", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.structured.format", "label": "Formatter les donnees GenBI", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.agent.create", "label": "Creer un agent Connaissance", "requiredScopes": ["service:knowledge_ai:agents"] },
+    { "id": "knowledge_ai.agent.test", "label": "Tester un agent", "requiredScopes": ["service:knowledge_ai:agents"] },
+    { "id": "knowledge_ai.agent.update", "label": "Modifier un agent", "requiredScopes": ["service:knowledge_ai:agents"] },
+    { "id": "knowledge_ai.agent.duplicate", "label": "Dupliquer un agent", "requiredScopes": ["service:knowledge_ai:agents"] },
+    { "id": "knowledge_ai.agent.archive", "label": "Archiver un agent", "requiredScopes": ["service:knowledge_ai:agents"] },
+    { "id": "knowledge_ai.project.create", "label": "Creer un projet de connaissance", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.project.update_context", "label": "Mettre a jour le contexte projet", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.project.launch_agent", "label": "Lancer un agent de projet", "requiredScopes": ["service:knowledge_ai:agents"] },
+    { "id": "knowledge_ai.analytics.refresh", "label": "Actualiser les analytics Connaissance", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.settings.update", "label": "Modifier les parametres Connaissance", "requiredScopes": ["service:knowledge_ai:admin"] },
+    { "id": "knowledge_ai.settings.automation.save", "label": "Enregistrer une regle de tri automatique", "requiredScopes": ["service:knowledge_ai:admin"] },
+    { "id": "knowledge_ai.settings.workflow.save", "label": "Enregistrer une integration workflow", "requiredScopes": ["service:knowledge_ai:admin"] },
+    { "id": "knowledge_ai.connector.connect", "label": "Connecter un connecteur via Bridge OAuth", "requiredScopes": ["service:knowledge_ai:admin"] },
+    { "id": "knowledge_ai.connector.disconnect", "label": "Deconnecter un connecteur", "requiredScopes": ["service:knowledge_ai:admin"] },
+    { "id": "knowledge_ai.data.export", "label": "Exporter les donnees Connaissance", "requiredScopes": ["service:knowledge_ai:admin"] },
+    { "id": "knowledge_ai.data.retention.update", "label": "Modifier la retention des donnees", "requiredScopes": ["service:knowledge_ai:admin"] },
+    { "id": "knowledge_ai.api_key.create", "label": "Creer une cle API Bridge", "requiredScopes": ["service:knowledge_ai:admin"] },
+    { "id": "knowledge_ai.api_key.revoke", "label": "Revoquer une cle API Bridge", "requiredScopes": ["service:knowledge_ai:admin"] },
+    { "id": "knowledge_ai.account.update", "label": "Modifier le compte utilisateur", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.account.logout", "label": "Deconnecter la session Bridge", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.automation.run", "label": "Executer une automatisation", "requiredScopes": ["service:knowledge_ai:write"] },
+    { "id": "knowledge_ai.viewer.action", "label": "Executer une action viewer", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.speech.start", "label": "Demarrer la dictee locale", "requiredScopes": ["service:knowledge_ai:chat"] },
+    { "id": "knowledge_ai.speech.stop", "label": "Arreter la dictee locale", "requiredScopes": ["service:knowledge_ai:chat"] },
+    { "id": "knowledge_ai.speech.toggle", "label": "Basculer la dictee locale", "requiredScopes": ["service:knowledge_ai:chat"] },
+    { "id": "knowledge_ai.speech.reset", "label": "Reinitialiser la dictee locale", "requiredScopes": ["service:knowledge_ai:chat"] },
+    { "id": "knowledge_ai.video.poll.start", "label": "Demarrer le suivi video", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.video.poll.status", "label": "Lire le suivi video", "requiredScopes": ["service:knowledge_ai:read"] },
+    { "id": "knowledge_ai.video.poll.stop", "label": "Arreter le suivi video", "requiredScopes": ["service:knowledge_ai:ingest"] },
+    { "id": "knowledge_ai.video.poll.clear", "label": "Nettoyer le suivi video", "requiredScopes": ["service:knowledge_ai:ingest"] }
+  ],
+  "events": [
+    {
+      "type": "knowledge_ai.chat.message_created",
+      "label": "Message Connaissance cree",
+      "requiredScopes": ["erp:events:publish"]
+    },
+    {
+      "type": "knowledge_ai.upload.prepared",
+      "label": "Ajout de fichier prepare",
+      "requiredScopes": ["erp:events:publish"]
+    },
+    {
+      "type": "knowledge_ai.job.completed",
+      "label": "Job Connaissance termine",
+      "requiredScopes": ["erp:events:publish"]
+    }
+  ],
+  "tables": [
+    {
+      "name": "knowledge_ai_contents",
+      "description": "Documents, notes, medias et sources importees.",
+      "rls": "organization"
+    },
+    {
+      "name": "knowledge_ai_sections",
+      "description": "Chunks indexables et citations RAG.",
+      "rls": "organization"
+    },
+    {
+      "name": "knowledge_ai_conversations",
+      "description": "Historique des chats Connaissance.",
+      "rls": "organization"
+    },
+    {
+      "name": "knowledge_ai_messages",
+      "description": "Messages et reponses associes aux conversations.",
+      "rls": "organization"
+    },
+    {
+      "name": "knowledge_ai_projects",
+      "description": "Contextes dedies par projet.",
+      "rls": "organization"
+    },
+    {
+      "name": "knowledge_ai_agents",
+      "description": "Agents, instructions systeme et politiques de routage local.",
+      "rls": "organization"
+    }
+  ],
+  "migrations": [
+    "supabase/migrations/20260614143000_knowledge_ai_module.sql"
+  ],
+  "seeds": [],
+  "bridgeService": {
+    "serviceId": "knowledge_ai",
+    "basePath": "/connaissance",
+    "requiredScopes": [
+      "service:knowledge_ai:read",
+      "service:knowledge_ai:write",
+      "service:knowledge_ai:chat",
+      "service:knowledge_ai:ingest",
+      "service:knowledge_ai:agents"
+    ]
+  },
+  "defaultAgentRouting": {
+    "mode": "local",
+    "privacy": "local-only",
+    "localModel": "ibm/granite-4-micro",
+    "reason": "Connaissance Bridge Sans API IA Externe."
+  },
+  "runtimeProviders": [
+    {
+      "key": "bridge_codex",
+      "mode": "bridge-job",
+      "enabledByDefault": true
+    },
+    {
+      "key": "lmstudio_local",
+      "mode": "desktop-local",
+      "baseUrl": "http://127.0.0.1:1234/v1",
+      "chatCompletionsCompatible": true,
+      "enabledByDefault": true
+    },
+    {
+      "key": "dgx_spark_lan",
+      "mode": "network-shared",
+      "baseUrlEnv": "KNOWLEDGE_AI_DGX_BASE_URL",
+      "chatCompletionsCompatible": true,
+      "enabledByDefault": false
+    }
+  ],
+  "sourceInventory": {
+    "sourcePathEnv": "YAKA_CONNAISSANCE_SOURCE_DIR",
+    "defaultSourcePath": "/Users/nicolascleton/Documents/connaissanceNEW",
+    "referenceCommit": "740833652b6b4472fc8b08e3ea04a94ca649d21b",
+    "uiSource": "src/app-v2",
+    "policy": "copy-ui-into-independent-service-adapt-runtime-local-only"
+  }
+}

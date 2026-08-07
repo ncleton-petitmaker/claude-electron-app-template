@@ -12,6 +12,43 @@
     "appMark": "assets/app-mark.svg",
     "bridgeMark": "assets/bridge-mark.png"
   },
+  "brand": {
+    "logoCharterVersion": "1.0.0",
+    "appMark": {
+      "role": "primary application mark",
+      "source": "assets/app-mark.svg",
+      "shape": "square icon with restrained radius",
+      "rules": [
+        "Use design-system tokens only.",
+        "Keep the mark simple enough to read at 16px.",
+        "Avoid decorative gradients, mascots and detailed illustrations."
+      ]
+    },
+    "bridgeMark": {
+      "role": "desktop Bridge and packaged-app mark",
+      "source": "assets/bridge-mark.png",
+      "rules": [
+        "Stay in the same visual family as the app mark.",
+        "Do not create a separate Bridge brand language.",
+        "Regenerate packaged icons from the active mark when the mark changes."
+      ]
+    },
+    "moduleIcons": {
+      "style": "stroke icon or minimal module mark using currentColor and design-system tokens",
+      "rules": [
+        "Use the shared Icon component for product UI controls and module navigation.",
+        "Module icons must not introduce a separate palette.",
+        "Third-party provider logos are not module icons unless license and trademark usage are explicitly audited."
+      ]
+    },
+    "thirdPartyMarks": {
+      "policy": "reference by name or neutral module icon by default",
+      "rules": [
+        "Do not copy upstream product logos into yaka-bridge before license and trademark review.",
+        "Use provider logos only as linked external attribution or after written distribution approval."
+      ]
+    }
+  },
   "tailwind": {
     "usesCssVariables": true,
     "tokenPrefix": "--"

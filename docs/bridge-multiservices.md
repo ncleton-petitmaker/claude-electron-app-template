@@ -17,10 +17,17 @@ elles deviennent des sites web Supabase qui gravitent autour de Bridge.
 ## Rôle des services web
 
 - Chaque service est un site web en ligne, généralement basé sur Supabase.
+- Chaque service produit indépendant a son propre projet Coolify, son domaine
+  ou sous-domaine, ses variables d'environnement et son cycle de déploiement.
 - Le service publie un manifeste : URL, healthcheck, scopes, actions et events.
 - Le service ne stocke pas son propre mot de passe utilisateur dans Bridge.
 - L'ouverture depuis Bridge doit passer par un launch ticket court et à usage
   unique généré par le Control Plane.
+- Bridge peut afficher un launcher, un état de santé ou une iframe contrôlée,
+  mais l'interface produit complète ne doit pas être recopiée dans l'admin
+  Bridge.
+
+Voir aussi [Architecture modules et services](service-module-architecture.md).
 
 ## Control Plane
 

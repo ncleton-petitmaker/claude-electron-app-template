@@ -23,6 +23,12 @@ vendor/pdfjs/
 data/
 !data-template/
 !data-template/**
+# ... mais les catalogues source des services externes sont du code, pas des données
+!services/*/data/
+!services/*/data/**
+
+# Captures de parité (screenshots d'app authentifiée, jamais dans le repo public)
+artifacts/
 
 # Évaluations sortantes (sensibles)
 evaluations/

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import { Mark } from "@/components/Mark";
 import { Icon } from "@/components/Icon";
 import { ConflictBanner } from "@/components/ConflictBanner";
@@ -20,10 +20,11 @@ import { BridgeIndicator } from "@/components/BridgeStatusProvider";
 interface NavTab {
   href: string;
   label: string;
+  icon?: ComponentProps<typeof Icon>["name"];
 }
 const baseTabs: NavTab[] = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/runs", label: "Achats" },
+  { href: "/connaissance", label: "Connaissance", icon: "sparkles" },
   { href: "/admin", label: "Admin" },
 ];
 
@@ -64,7 +65,7 @@ export function AppChromeHeader() {
       <ConflictBanner />
       <header className="app-chrome-header">
         <Link
-          href="/runs"
+          href="/dashboard"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -125,9 +126,11 @@ export function AppChromeHeader() {
                   fontSize: 13,
                   fontWeight: 500,
                   display: "inline-flex",
+                  gap: 6,
                   alignItems: "center",
                 }}
               >
+                {t.icon ? <Icon name={t.icon} size={13} /> : null}
                 {t.label}
               </Link>
             );

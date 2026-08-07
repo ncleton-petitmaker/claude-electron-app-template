@@ -53,6 +53,7 @@
     "bridge-voice/target",
     ".next",
     "Projets",
+    "services",
     ".pi",
     "pi-electron-app-factory"
   ]

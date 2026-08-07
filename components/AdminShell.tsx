@@ -8,12 +8,6 @@ import { Icon } from "@/components/Icon";
 
 const adminNav = [
   {
-    href: "/admin/design-systems",
-    label: "Design",
-    description: "Sites et design systems",
-    icon: "sparkles" as const,
-  },
-  {
     href: "/admin/observability",
     label: "Observation",
     description: "Sessions et erreurs",
@@ -24,6 +18,12 @@ const adminNav = [
     label: "Routage",
     description: "Cloud et local",
     icon: "git-merge" as const,
+  },
+  {
+    href: "/admin/knowledge-ai",
+    label: "Connaissance",
+    description: "Mode local-only",
+    icon: "sparkles" as const,
   },
 ];
 

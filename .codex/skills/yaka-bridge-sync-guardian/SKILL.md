@@ -12,6 +12,25 @@ artefact Desktop, un template, ou une sauvegarde Git après changement client.
 Objectif : empêcher qu'un agent travaille sur un vieux clone client ou génère un
 DMG/EXE depuis un core Yaka copié.
 
+## Règle architecture services
+
+Le guardian doit aussi empêcher la dérive entre **module Bridge** et **service
+web indépendant**.
+
+- Lire `docs/service-module-architecture.md` avant de créer une surface module.
+- Un module marqué `deployment.kind = external-service` dans
+  `modules/<id>/module.config.json` ne doit pas porter sa UI produit complète
+  dans `app/<service>/` ou `app/admin/<service>/`.
+- Bridge peut contenir uniquement :
+  - une page admin de configuration/health ;
+  - un launcher/redirect/iframe contrôlée ;
+  - les actions serveur, scopes, events, jobs et migrations du contrat.
+- Chaque service produit indépendant doit avoir son propre Coolify, son domaine
+  ou sous-domaine, et son enregistrement `bridge_services`.
+
+Si le doctor signale une route produit pour un service externe, corriger
+l'architecture avant de continuer.
+
 ## Règle
 
 - `yaka-bridge` est la plateforme source.

@@ -11,6 +11,7 @@ type IconName =
   | 'chevron-right'
   | 'close'
   | 'copy'
+  | 'cpu'
   | 'comment'
   | 'download'
   | 'draw'
@@ -145,6 +146,21 @@ export function Icon({ name, size = 14, strokeWidth = 1.6, ...rest }: Props) {
         <svg {...common}>
           <rect x="9" y="9" width="13" height="13" rx="2" />
           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+      );
+    case 'cpu':
+      return (
+        <svg {...common}>
+          <rect x="7" y="7" width="10" height="10" rx="2" />
+          <rect x="10" y="10" width="4" height="4" rx="1" />
+          <path d="M9 1v3" />
+          <path d="M15 1v3" />
+          <path d="M9 20v3" />
+          <path d="M15 20v3" />
+          <path d="M20 9h3" />
+          <path d="M20 14h3" />
+          <path d="M1 9h3" />
+          <path d="M1 14h3" />
         </svg>
       );
     case 'comment':

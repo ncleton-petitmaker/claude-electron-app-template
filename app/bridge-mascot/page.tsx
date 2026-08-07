@@ -45,7 +45,7 @@ export default function BridgeMascotPage() {
         </Link>
         <nav aria-label="Navigation prototype">
           <Link href="/dashboard">Dashboard</Link>
-          <Link href="/runs">Achats</Link>
+          <Link href="/connaissance">Connaissance</Link>
         </nav>
       </header>
       <main className="bridge-mascot-page">

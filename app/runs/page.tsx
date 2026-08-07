@@ -1,7 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { PurchasingWorkspace } from "@/modules/purchasing/PurchasingWorkspace";
-
-export default function RunsPage() {
-  return <PurchasingWorkspace />;
+export default function RunsPage(): never {
+  redirect("/connaissance");
 }

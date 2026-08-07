@@ -22,6 +22,7 @@ Required files:
 - `DESIGN.md`: human and agent-readable rules.
 - `design-system.config.json`: machine-readable manifest.
 - `tokens.css`: CSS variables consumed by app, modules and Tailwind aliases.
+- `brand`: logo and module-icon charter embedded in the manifest.
 
 Optional files:
 
@@ -29,6 +30,34 @@ Optional files:
 - `assets/bridge-mark.svg`
 
 The active system is recorded in `design-system.config.json` at the repo root.
+
+## Logo and module-icon charter
+
+Every design system must describe its visual identity rules in
+`design-system.config.json` under `brand`.
+
+The `brand` block covers:
+
+- `appMark`: primary application mark, normally copied to `public/app-mark.svg`;
+- `bridgeMark`: desktop Bridge and packaged-app mark, normally copied to
+  `public/bridge-mark.svg` or `public/bridge-mark.png`;
+- `moduleIcons`: in-product module icons and launcher glyphs;
+- `thirdPartyMarks`: external provider marks such as Jan, LM Studio, OpenAI or
+  cloud vendors.
+
+Rules:
+
+- App and Bridge marks must stay in the same visual family.
+- Marks and module icons must use design-system tokens, currentColor or the
+  active asset files; they must not introduce a separate palette.
+- Module navigation and action buttons should use the shared `Icon` component.
+- A third-party provider logo is not a module icon by default. Use a neutral
+  product icon plus the provider name until license and trademark usage have
+  been reviewed.
+- Do not copy upstream product logos into the public yaka-bridge repo before
+  license, trademark and distribution audit.
+- Icon-only launchers must have an accessible label and a tooltip/title. If the
+  launcher starts a local runtime, the action must be explicit and auditable.
 
 ## Importing a design system
 
@@ -175,6 +204,8 @@ Every design system must provide:
 - type: `--serif`, `--sans`, `--mono`;
 - motion: `--ease`, `--t-fast`.
 - local UI sizing: `--modal-padding`.
+- brand contract: `brand.logoCharterVersion`, `brand.appMark`,
+  `brand.bridgeMark`, `brand.moduleIcons`, `brand.thirdPartyMarks`.
 
 ## Acceptance checklist
 

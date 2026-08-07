@@ -174,6 +174,45 @@ function validatePlatform(root, pkg, project, result) {
     ? readFileSync(join(root, ".github", "workflows", "ci.yml"), "utf8")
     : "";
   if (!ci.includes("npm run yaka:doctor")) result.errors.push("CI doit lancer npm run yaka:doctor.");
+
+  validateExternalServiceBoundaries(root, result);
+}
+
+function validateExternalServiceBoundaries(root, result) {
+  const modulesDir = join(root, "modules");
+  if (!existsSync(modulesDir)) return;
+  for (const entry of readdirSync(modulesDir, { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
+    const manifestPath = join(modulesDir, entry.name, "module.config.json");
+    const manifest = readJson(manifestPath);
+    if (!manifest || manifest.deployment?.kind !== "external-service") continue;
+    const serviceSlug = cleanRouteSegment(manifest.deployment?.serviceSlug ?? manifest.bridgeService?.basePath ?? manifest.id);
+    if (!serviceSlug) {
+      result.errors.push(`Module externe ${entry.name}: deployment.serviceSlug obligatoire.`);
+      continue;
+    }
+    const appServiceDir = join(root, "app", serviceSlug);
+    if (!existsSync(appServiceDir)) continue;
+    const files = listFiles(appServiceDir).map((file) => relative(root, file));
+    const allowed = new Set([
+      `app/${serviceSlug}/page.tsx`,
+      `app/${serviceSlug}/[...path]/page.tsx`,
+    ]);
+    const forbidden = files.filter((file) => !allowed.has(file));
+    if (forbidden.length) {
+      result.errors.push(
+        `Module externe ${entry.name}: routes produit interdites dans Bridge (${forbidden.join(", ")}). ` +
+        `Garde uniquement un launcher app/${serviceSlug}/page.tsx et deplace l'UI dans services/${serviceSlug}/ ou un repo service.`
+      );
+    }
+    const adminDir = join(root, "app", "admin", serviceSlug);
+    if (existsSync(adminDir)) {
+      result.errors.push(
+        `Module externe ${entry.name}: app/admin/${serviceSlug} ressemble a une app produit. ` +
+        `Utilise une page admin explicite comme app/admin/${entry.name.replaceAll("_", "-")}/.`
+      );
+    }
+  }
 }
 
 function validateClient(root, pkg, project, result) {
@@ -243,6 +282,22 @@ function readJson(path) {
   } catch {
     return null;
   }
+}
+
+function listFiles(dir) {
+  const files = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...listFiles(path));
+    else files.push(path);
+  }
+  return files;
+}
+
+function cleanRouteSegment(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return undefined;
+  return raw.replace(/^\/+/, "").split(/[/?#]/)[0];
 }
 
 function findRepoRoot(start) {

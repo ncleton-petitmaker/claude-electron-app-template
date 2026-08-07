@@ -1,0 +1,120 @@
+{
+  "id": "local_ai",
+  "version": "0.1.0",
+  "labels": {
+    "fr": "IA locale",
+    "en": "Local AI"
+  },
+  "description": {
+    "fr": "Module de reference pour l'interface AnythingLLM, Jan, LM Studio et les futurs providers IA locaux compatibles Bridge.",
+    "en": "Reference module for the AnythingLLM UI, Jan, LM Studio and future Bridge-compatible local AI providers."
+  },
+  "category": "business",
+  "dataStrategy": "service-supabase",
+  "routes": [
+    {
+      "path": "/local-ai/jan",
+      "kind": "workspace",
+      "label": {
+        "fr": "Reference Jan",
+        "en": "Jan reference"
+      }
+    },
+    {
+      "path": "/admin/agent-routing",
+      "kind": "admin",
+      "label": {
+        "fr": "Routage IA",
+        "en": "AI routing"
+      }
+    }
+  ],
+  "scopes": [
+    "erp:core:read",
+    "erp:events:publish",
+    "erp:events:consume",
+    "service:local_ai:read",
+    "service:local_ai:write",
+    "service:local_ai:admin",
+    "codex:run"
+  ],
+  "actions": [
+    {
+      "id": "local_ai.jan.status",
+      "label": "Inspecter le clone Jan local",
+      "requiredScopes": ["service:local_ai:read"]
+    },
+    {
+      "id": "local_ai.jan.instructions",
+      "label": "Lire les instructions Jan Bridge",
+      "requiredScopes": ["service:local_ai:read"],
+      "agentRouting": {
+        "mode": "local",
+        "privacy": "local-only",
+        "reason": "Le module inspecte des dossiers locaux et ne lance aucun runtime automatiquement."
+      }
+    }
+  ],
+  "events": [],
+  "tables": [],
+  "migrations": [
+    "supabase/migrations/20260614120000_local_ai_module.sql"
+  ],
+  "seeds": [],
+  "bridgeService": {
+    "serviceId": "local_ai",
+    "basePath": "/local-ai/jan",
+    "requiredScopes": [
+      "service:local_ai:read"
+    ]
+  },
+  "externalSources": [
+    {
+      "key": "anythingllm-upstream",
+      "repository": "https://github.com/Mintplex-Labs/anything-llm.git",
+      "defaultRef": "master",
+      "localPathEnv": "YAKA_ANYTHINGLLM_SOURCE_DIR",
+      "defaultLocalPath": "/Volumes/Docker/anythingllm-upstream",
+      "policy": "read-only-ui-reference"
+    },
+    {
+      "key": "anythingllm-yaka-bridge",
+      "repository": "https://github.com/Mintplex-Labs/anything-llm.git",
+      "defaultRef": "yaka-bridge-integration",
+      "localPathEnv": "YAKA_ANYTHINGLLM_WORKTREE_DIR",
+      "defaultLocalPath": "/Volumes/Docker/anythingllm-yaka-bridge",
+      "policy": "bridge-ui-adaptation-worktree"
+    },
+    {
+      "key": "jan-upstream",
+      "repository": "https://github.com/janhq/jan.git",
+      "defaultRef": "main",
+      "localPathEnv": "YAKA_JAN_SOURCE_DIR",
+      "defaultLocalPath": "/Volumes/Docker/jan-upstream",
+      "policy": "read-only-reference"
+    },
+    {
+      "key": "jan-yaka-bridge",
+      "repository": "https://github.com/janhq/jan.git",
+      "defaultRef": "yaka-bridge-integration",
+      "localPathEnv": "YAKA_JAN_WORKTREE_DIR",
+      "defaultLocalPath": "/Volumes/Docker/jan-yaka-bridge",
+      "policy": "bridge-adaptation-worktree"
+    }
+  ],
+  "runtimeProviders": [
+    {
+      "key": "lmstudio-local",
+      "mode": "desktop-local",
+      "baseUrl": "http://127.0.0.1:1234/v1",
+      "openAiCompatible": true
+    },
+    {
+      "key": "dgx-spark-lan",
+      "mode": "network-shared",
+      "baseUrl": "http://dgx-spark.local:8000/v1",
+      "openAiCompatible": true,
+      "enabledByDefault": false
+    }
+  ]
+}

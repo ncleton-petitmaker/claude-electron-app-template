@@ -40,10 +40,19 @@ must be recalculated against official OpenAI pricing and real customer volumes:
 This repository is a public template. It is not a hosted demo and it does not
 contain real customer data.
 
-Current catalog module:
+Current active catalog module:
 
-- `purchasing` / `Achats`: suppliers, quotes, comparison workflows, demo seeds,
-  agentic actions and RLS-protected Supabase tables.
+- `knowledge_ai` / `Connaissance`: Bridge integration contract for an
+  independent Connaissance service. Bridge owns admin/config, scopes, launch
+  tickets and local-only AI routing; the product UI must live in its own
+  service/Coolify with a dedicated Supabase by default.
+
+`local_ai` remains a technical reference/provider layer for Jan and local model
+inspection. It is not registered as the active product module in this shell.
+
+The legacy `purchasing` module remains in the repository as a technical fixture
+for module contracts, tests and scaffolding examples, but it is not registered
+as an active product module in this shell.
 
 Current production posture:
 
@@ -390,9 +399,11 @@ Start here:
 - [Operator guide](docs/yaka-bridge-operator-guide.md)
 - [Onboarding](docs/onboarding.md)
 - [Architecture](docs/architecture.md)
+- [Module/service architecture](docs/service-module-architecture.md)
 - [Design systems](docs/design-systems.md)
 - [Project workspaces](docs/project-workspaces.md)
 - [Module catalog](docs/module-catalog.md)
+- [Connaissance inventory](docs/knowledge-ai-connaissance-inventory.md)
 - [Repository governance](docs/repository-governance.md)
 - [Cloud security](docs/cloud-security.md)
 - [Local AI routing](docs/local-ai-routing.md)
