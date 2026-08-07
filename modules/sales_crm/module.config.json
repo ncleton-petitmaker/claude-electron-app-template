@@ -1,0 +1,126 @@
+{
+  "id": "sales_crm",
+  "version": "0.1.0",
+  "labels": {
+    "fr": "CRM commercial",
+    "en": "Sales CRM"
+  },
+  "description": {
+    "fr": "Contrat Bridge du CRM commercial independant : scopes, actions proxifiees, lancement par billet et administration.",
+    "en": "Bridge contract for the independent sales CRM: scopes, proxied actions, ticket launch and administration."
+  },
+  "category": "business",
+  "dataStrategy": "external-api",
+  "deployment": {
+    "kind": "external-service",
+    "serviceSlug": "crm",
+    "defaultDomainPattern": "crm.<client-domain>",
+    "localDevUrl": "http://127.0.0.1:3950",
+    "serviceUrlEnv": "NEXT_PUBLIC_SALES_CRM_SERVICE_URL",
+    "healthPath": "/health",
+    "launchCallbackPath": "/bridge/launch",
+    "coolify": {
+      "required": false,
+      "resource": "external",
+      "note": "Le CRM apporte son propre deploiement et son propre stack Supabase par tenant. Bridge ne le construit pas."
+    },
+    "supabase": {
+      "strategy": "dedicated",
+      "sharedAllowed": false,
+      "note": "Satisfait par construction : le CRM embarque un cluster Postgres complet par tenant. Aucune table crm_* dans le Supabase du Bridge."
+    }
+  },
+  "routes": [
+    {
+      "path": "/crm",
+      "kind": "launcher",
+      "label": {
+        "fr": "Ouvrir le CRM",
+        "en": "Open the CRM"
+      }
+    },
+    {
+      "path": "/admin/sales-crm",
+      "kind": "admin",
+      "label": {
+        "fr": "CRM commercial",
+        "en": "Sales CRM"
+      }
+    }
+  ],
+  "scopes": [
+    "erp:core:read",
+    "erp:events:publish",
+    "service:sales_crm:read",
+    "service:sales_crm:write",
+    "service:sales_crm:admin"
+  ],
+  "actions": [
+    {
+      "id": "sales_crm.customer.lookup",
+      "label": "Chercher une entreprise dans le CRM",
+      "requiredScopes": ["service:sales_crm:read"],
+      "agentRouting": {
+        "mode": "local",
+        "privacy": "sensitive",
+        "reason": "Donnees clients nominatives : la recherche reste sur le poste, elle ne part pas vers un modele distant."
+      }
+    },
+    {
+      "id": "sales_crm.contact.lookup",
+      "label": "Chercher un contact dans le CRM",
+      "requiredScopes": ["service:sales_crm:read"],
+      "agentRouting": {
+        "mode": "local",
+        "privacy": "sensitive",
+        "reason": "Donnees personnelles : prenom, nom, adresse electronique, telephone."
+      }
+    },
+    {
+      "id": "sales_crm.interaction.log",
+      "label": "Journaliser une interaction commerciale",
+      "requiredScopes": ["service:sales_crm:write"],
+      "agentRouting": {
+        "mode": "local",
+        "privacy": "sensitive",
+        "reason": "Ecriture d'une note de relation client dans le CRM du tenant."
+      }
+    }
+  ],
+  "events": [
+    {
+      "type": "sales_crm.customer.updated",
+      "label": "Fiche entreprise modifiee",
+      "requiredScopes": ["erp:events:publish"]
+    },
+    {
+      "type": "sales_crm.interaction.created",
+      "label": "Interaction commerciale enregistree",
+      "requiredScopes": ["erp:events:publish"]
+    }
+  ],
+  "tables": [],
+  "migrations": ["supabase/migrations/20260807120000_sales_crm_module.sql"],
+  "seeds": [],
+  "bridgeService": {
+    "serviceId": "sales_crm",
+    "basePath": "/crm",
+    "requiredScopes": [
+      "service:sales_crm:read",
+      "service:sales_crm:write"
+    ]
+  },
+  "defaultAgentRouting": {
+    "mode": "local",
+    "privacy": "sensitive",
+    "reason": "Le CRM porte des donnees personnelles de prospects et de clients."
+  },
+  "externalSources": [
+    {
+      "kind": "openapi",
+      "path": "/api/openapi.json",
+      "auth": "service-token",
+      "note": "Contrat versionne des modules du CRM. Les actions sales_crm.* n'appellent que POST /api/tools/<module>/<outil>, jamais les routes REST historiques."
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 import type { ErpModuleManifest } from "./types";
 import { knowledgeAiModule } from "./knowledge_ai";
+import { salesCrmModule } from "./sales_crm";
 
-export const erpModules = [knowledgeAiModule] satisfies ErpModuleManifest[];
+export const erpModules = [knowledgeAiModule, salesCrmModule] satisfies ErpModuleManifest[];
 
 export function getErpModule(moduleId: string): ErpModuleManifest | undefined {
   return erpModules.find((module) => module.id === moduleId);

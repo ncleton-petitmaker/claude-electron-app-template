@@ -34,6 +34,7 @@ import {
 } from "./skills.js";
 import { getSupabasePublicConfig, getSupabaseServerClient } from "./supabase.js";
 import { localAiJanInstructions, localAiJanStatus } from "./local-ai-jan.js";
+import { callCrmTool, checkSalesCrmHealth } from "./sales-crm-client.js";
 import {
   knowledgeAiChatSend,
   knowledgeAiChatStream,
@@ -171,6 +172,23 @@ const LocalAiJanPathsSchema = z.object({
   sourceDir: z.string().min(1).optional(),
   worktreeDir: z.string().min(1).optional(),
 }).strict();
+const SalesCrmCustomerLookupSchema = z.object({
+  query: z.string().min(1),
+  limit: z.number().int().min(1).max(50).optional(),
+}).strict();
+const SalesCrmContactLookupSchema = z.object({
+  organizationId: z.string().min(1).optional(),
+  decisionMakersOnly: z.boolean().optional(),
+  limit: z.number().int().min(1).max(50).optional(),
+}).strict();
+const SalesCrmInteractionLogSchema = z.object({
+  type: z.enum(["email", "call", "meeting", "note", "task"]),
+  subject: z.string().min(1),
+  body: z.string().optional(),
+  contactId: z.string().min(1).optional(),
+  organizationId: z.string().min(1).optional(),
+  occurredAt: z.string().min(1).optional(),
+}).strict();
 const KnowledgeAiProviderSchema = z.enum(["bridge_codex", "lmstudio_local", "dgx_spark_lan"]);
 const KnowledgeAiRuntimeStatusSchema = z.object({
   settingsAction: z.string().min(1).optional(),
@@ -233,6 +251,9 @@ const KnowledgeAiOperationSchema = z.object({
 type PurchasingQuoteImportInput = z.infer<typeof PurchasingQuoteImportSchema>;
 type PurchasingQuoteAnalyzeInput = z.infer<typeof PurchasingQuoteAnalyzeSchema>;
 type LocalAiJanPathsInput = z.infer<typeof LocalAiJanPathsSchema>;
+type SalesCrmCustomerLookupInput = z.infer<typeof SalesCrmCustomerLookupSchema>;
+type SalesCrmContactLookupInput = z.infer<typeof SalesCrmContactLookupSchema>;
+type SalesCrmInteractionLogInput = z.infer<typeof SalesCrmInteractionLogSchema>;
 type KnowledgeAiRuntimeStatusInput = z.infer<typeof KnowledgeAiRuntimeStatusSchema>;
 type KnowledgeAiSourceInventoryInput = z.infer<typeof KnowledgeAiSourceInventorySchema>;
 type KnowledgeAiChatInput = z.infer<typeof KnowledgeAiChatSchema>;
@@ -1121,6 +1142,81 @@ export const appActions = {
     ["service:knowledge_ai:ingest"],
     "knowledge_ai_video",
   ),
+  // ── CRM commercial ────────────────────────────────────────────────────
+  // Le CRM est un service externe : ces actions ne touchent aucune table
+  // du Bridge, elles relaient vers son contrat OpenAPI. Les declarer ici
+  // suffit a leur donner la parite HTTP et MCP, puisque les trois surfaces
+  // partagent le meme registre de handlers.
+  "sales_crm.service.health": {
+    id: "sales_crm.service.health",
+    description: "Check whether the external sales CRM answers and how many tools it advertises.",
+    inputSchema: EmptySchema,
+    inputJsonSchema: objectSchema({}),
+    requiredServiceScopes: [{ serviceId: "sales_crm", scopes: ["service:sales_crm:read"] }],
+    audit: { action: "sales-crm-service-health", resourceType: "sales_crm_service" },
+    handler: (ctx: ActionContext) => checkSalesCrmHealth(ctx.signal),
+  },
+  "sales_crm.customer.lookup": {
+    id: "sales_crm.customer.lookup",
+    description: "Search companies in the external sales CRM by name, city or SIRET.",
+    inputSchema: SalesCrmCustomerLookupSchema,
+    inputJsonSchema: objectSchema({
+      query: { type: "string" },
+      limit: { type: "number" },
+    }, ["query"]),
+    requiredServiceScopes: [{ serviceId: "sales_crm", scopes: ["service:sales_crm:read"] }],
+    audit: { action: "sales-crm-customer-lookup", resourceType: "sales_crm_customer" },
+    handler: (ctx: ActionContext, input: SalesCrmCustomerLookupInput) =>
+      callCrmTool("core-crm-foundation", "orgs_search", {
+        query: input.query,
+        limit: input.limit ?? 20,
+      }, ctx.signal),
+  },
+  "sales_crm.contact.lookup": {
+    id: "sales_crm.contact.lookup",
+    description: "List contacts in the external sales CRM, optionally scoped to one company.",
+    inputSchema: SalesCrmContactLookupSchema,
+    inputJsonSchema: objectSchema({
+      organizationId: { type: "string" },
+      decisionMakersOnly: { type: "boolean" },
+      limit: { type: "number" },
+    }),
+    requiredServiceScopes: [{ serviceId: "sales_crm", scopes: ["service:sales_crm:read"] }],
+    audit: { action: "sales-crm-contact-lookup", resourceType: "sales_crm_contact" },
+    handler: (ctx: ActionContext, input: SalesCrmContactLookupInput) => {
+      // Le CRM nomme ses parametres en snake_case. La traduction se fait
+      // ici, une fois, plutot que dans chaque appelant.
+      const payload: Record<string, unknown> = { limit: input.limit ?? 50 };
+      if (input.organizationId) payload.organization_id = input.organizationId;
+      if (input.decisionMakersOnly !== undefined) {
+        payload.is_decision_maker = input.decisionMakersOnly;
+      }
+      return callCrmTool("core-crm-foundation", "contacts_list", payload, ctx.signal);
+    },
+  },
+  "sales_crm.interaction.log": {
+    id: "sales_crm.interaction.log",
+    description: "Record a commercial interaction (call, meeting, note) in the external sales CRM.",
+    inputSchema: SalesCrmInteractionLogSchema,
+    inputJsonSchema: objectSchema({
+      type: { type: "string", enum: ["email", "call", "meeting", "note", "task"] },
+      subject: { type: "string" },
+      body: { type: "string" },
+      contactId: { type: "string" },
+      organizationId: { type: "string" },
+      occurredAt: { type: "string" },
+    }, ["type", "subject"]),
+    requiredServiceScopes: [{ serviceId: "sales_crm", scopes: ["service:sales_crm:write"] }],
+    audit: { action: "sales-crm-interaction-log", resourceType: "sales_crm_interaction" },
+    handler: (ctx: ActionContext, input: SalesCrmInteractionLogInput) => {
+      const payload: Record<string, unknown> = { type: input.type, subject: input.subject };
+      if (input.body) payload.body = input.body;
+      if (input.contactId) payload.contact_id = input.contactId;
+      if (input.organizationId) payload.organization_id = input.organizationId;
+      if (input.occurredAt) payload.occurred_at = input.occurredAt;
+      return callCrmTool("crm-pipeline", "activities_create", payload, ctx.signal);
+    },
+  },
   "purchasing.quote.import": {
     id: "purchasing.quote.import",
     description: "Import or update a supplier quote in the generic purchasing module.",
