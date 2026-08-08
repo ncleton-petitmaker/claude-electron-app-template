@@ -3369,9 +3369,6 @@ function statusHtml() {
     .app-card.active .app-icon::after, .app-card.reconnecting .app-icon::after { content:""; position:absolute; inset:auto 12px 10px; height:3px; border-radius:99px; background: linear-gradient(90deg, transparent, var(--blue), transparent); animation: move 1.15s linear infinite; }
     .app-card.codex_unready .app-icon, .app-card.cloud_stale .app-icon { border-color: var(--amber-border); }
     .app-card.disconnected .app-icon, .app-card.site_unreachable .app-icon, .app-card.local_unavailable .app-icon { border-color: var(--red-border); }
-    .app-card.placeholder { cursor: default; opacity: .48; filter: grayscale(.12); }
-    .app-card.placeholder .app-icon { box-shadow: var(--shadow); }
-    .app-card.placeholder:hover .app-icon { transform: none; box-shadow: var(--shadow); }
     .app-label { display: grid; gap: 2px; width: 100%; min-width: 0; }
     .app-label strong { font-size: 16px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .app-label span { color: var(--muted); font-size: 11px; text-transform: lowercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -3502,7 +3499,13 @@ function statusHtml() {
           '<span class="app-icon" aria-hidden="true">' + appIcon(service) + '</span>' +
           '<span class="app-label"><strong>' + esc(service.name) + '</strong></span>' +
         '</button>';
-      }).join("") + placeholderApps(state.services) : '<p class="empty">Aucune app autorisée.</p>';
+      // Bridge n'est pas un lanceur d'applications : il ouvre les services
+      // reellement declares, rien de plus. Quatre tuiles de remplissage
+      // (CRM, Reseaux, Formation, Compta) vivaient ici, grisees et inertes.
+      // Elles suggeraient des applications qui n'existaient pas, et le
+      // changement d'app se fait de toute facon dans l'interface du service
+      // une fois ouvert, par son rail lateral.
+      }).join("") : '<p class="empty">Aucune app autorisée.</p>';
         services.querySelectorAll("[data-open]").forEach(btn => {
           if (btn.dataset.bound === "1") return;
           btn.dataset.bound = "1";
@@ -3591,40 +3594,6 @@ function statusHtml() {
       const key = id + " " + name;
       if (key.includes("achat") || key.includes("purchase") || key.includes("supplier")) return achatsLogoSvg();
       return iconGeneric(service.name || service.serviceId || "App");
-    }
-    function placeholderApps(services = []) {
-      // Les quatre surfaces metier de Nicolas. Elles restent grisees tant
-      // qu'aucun service correspondant n'est declare dans bridge/config.ts :
-      // une tuile ne devient cliquable que si elle arrive par state.services.
-      //
-      // On retire du lot celles qui ont deja un vrai service : sans ce
-      // filtre, declarer le service CRM affichait deux tuiles CRM, une
-      // cliquable et une grise juste a cote.
-      const declares = new Set(
-        services.flatMap(s => [s.serviceId, s.name].filter(Boolean).map(v => String(v).toLowerCase()))
-      );
-      const apps = [
-        { name: "CRM", key: "crm" },
-        { name: "Reseaux", key: "reseaux" },
-        { name: "Formation", key: "formation" },
-        { name: "Compta", key: "compta" },
-      ].filter(app => !declares.has(app.key) && !declares.has(app.name.toLowerCase()));
-      return apps.map(app =>
-        '<button class="app-card placeholder" disabled aria-label="' + esc(app.name + " indisponible") + '" title="' + esc(app.name + " indisponible") + '">' +
-          '<span class="app-icon" aria-hidden="true">' + placeholderIcon(app.key) + '</span>' +
-          '<span class="app-label"><strong>' + esc(app.name) + '</strong></span>' +
-        '</button>'
-      ).join("");
-    }
-    function placeholderIcon(key) {
-      // Meme langage que la tuile Achats : aplats sur une grille 96, trois
-      // teintes du theme (--icon-bg, --icon-accent, --icon-fg), pas de trait
-      // fin qui disparaitrait a la taille reelle de la tuile.
-      if (key === "crm") return iconSvg('<rect x="16" y="24" width="64" height="48" rx="12" fill="var(--icon-fg)"/><circle cx="39" cy="44" r="9" fill="var(--icon-bg)"/><path d="M25 64c1.6-9 7-13.5 14-13.5S51.4 55 53 64Z" fill="var(--icon-bg)"/><rect x="58" y="40" width="14" height="6" rx="3" fill="var(--icon-accent)"/><rect x="58" y="52" width="14" height="6" rx="3" fill="var(--icon-accent)"/>');
-      if (key === "reseaux") return iconSvg('<path d="M48 30 26 62M48 30l22 32M28 64h40" stroke="var(--icon-fg)" stroke-width="6" stroke-linecap="round" opacity=".45"/><circle cx="48" cy="26" r="11" fill="var(--icon-accent)"/><circle cx="24" cy="66" r="10" fill="var(--icon-fg)"/><circle cx="72" cy="66" r="10" fill="var(--icon-fg)"/>');
-      if (key === "formation") return iconSvg('<path d="M48 18 86 37 48 56 10 37 48 18Z" fill="var(--icon-accent)"/><path d="M28 45v17c0 6 9 11 20 11s20-5 20-11V45L48 56 28 45Z" fill="var(--icon-fg)"/><path d="M82 39v21" stroke="var(--icon-fg)" stroke-width="6" stroke-linecap="round"/>');
-      if (key === "compta") return iconSvg('<rect x="24" y="12" width="48" height="72" rx="12" fill="var(--icon-fg)"/><rect x="33" y="22" width="30" height="15" rx="5" fill="var(--icon-bg)"/><circle cx="37" cy="50" r="4.5" fill="var(--icon-accent)"/><circle cx="48" cy="50" r="4.5" fill="var(--icon-bg)"/><circle cx="59" cy="50" r="4.5" fill="var(--icon-bg)"/><circle cx="37" cy="63" r="4.5" fill="var(--icon-bg)"/><circle cx="48" cy="63" r="4.5" fill="var(--icon-bg)"/><circle cx="59" cy="63" r="4.5" fill="var(--icon-accent)"/><circle cx="37" cy="74" r="4.5" fill="var(--icon-bg)"/><circle cx="48" cy="74" r="4.5" fill="var(--icon-bg)"/><circle cx="59" cy="74" r="4.5" fill="var(--icon-bg)"/>');
-      return iconGeneric("A");
     }
     function iconSvg(body) {
       return '<svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">' + body + '</svg>';
