@@ -15,7 +15,7 @@
     "kind": "external-service",
     "serviceSlug": "crm",
     "defaultDomainPattern": "crm.<client-domain>",
-    "localDevUrl": "http://127.0.0.1:3950",
+    "localDevUrl": "http://127.0.0.1:3200",
     "serviceUrlEnv": "NEXT_PUBLIC_SALES_CRM_SERVICE_URL",
     "healthPath": "/health",
     "launchCallbackPath": "/bridge/launch",
