@@ -3260,6 +3260,12 @@ function showStatusWindow({ focus = false } = {}) {
     }
   });
   statusWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(statusHtml())}`);
+  // Le rendu du panneau vit dans une chaine de gabarit : une erreur y passe
+  // inapercue de node --check et vide la fenetre sans un mot. BRIDGE_DEVTOOLS=1
+  // ouvre la console pour la voir. Garde-fou de dev, jamais actif en prod.
+  if (process.env.BRIDGE_DEVTOOLS === "1") {
+    statusWindow.webContents.openDevTools({ mode: "detach" });
+  }
   return statusWindow;
 }
 
@@ -3345,6 +3351,8 @@ function statusHtml() {
     .codex-mini.error { color: var(--red); border-color: var(--red-border); background: var(--red-bg); }
     .codex-mini .dot { width: 8px; height: 8px; border-radius: 99px; background: currentColor; box-shadow: none; }
     .services { min-height: calc(100vh - 94px); display: grid; grid-template-columns: repeat(3, 128px); gap: 38px 42px; align-content: center; justify-content: center; align-items: start; }
+    /* Un seul bouton : une colonne centree, sinon il se cale a gauche d'une grille de trois. */
+    .services:has(.workspace-launch) { grid-template-columns: auto; align-items: center; }
     .services.provisioning { grid-template-columns: minmax(0, 520px); gap: 0; align-content: center; justify-content: center; }
     .provisioning-panel { width: min(520px, calc(100vw - 72px)); border: 1px solid var(--line); background: var(--panel); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; display: grid; gap: 12px; }
     .provisioning-panel h2 { margin: 0; font-size: 22px; line-height: 1.2; letter-spacing: 0; }
@@ -3362,6 +3370,14 @@ function statusHtml() {
     .codex-card code { font-family: var(--font-mono); color: var(--fg); background: var(--subtle); padding: 2px 4px; border-radius: 4px; }
     .app-card { appearance: none; border: 0; background: transparent; padding: 0; color: var(--fg); min-height: 0; width: 128px; display: grid; justify-items: center; gap: 12px; text-align: center; cursor: pointer; position: relative; }
     .app-card:hover { text-decoration: none; }
+    .workspace-launch { appearance: none; border: 0; background: transparent; padding: 0; color: var(--fg); display: grid; justify-items: center; gap: 18px; cursor: pointer; }
+    .workspace-launch:disabled { cursor: progress; opacity: .7; }
+    .workspace-launch-icon { width: 152px; height: 152px; border-radius: var(--radius); background: var(--panel); box-shadow: var(--shadow); display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--border) 72%, transparent); transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease); }
+    .workspace-launch:hover:not(:disabled) .workspace-launch-icon { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+    .workspace-launch-icon svg { width: 78px; height: 78px; }
+    .workspace-launch-label { display: grid; gap: 3px; text-align: center; }
+    .workspace-launch-label strong { font-size: 18px; }
+    .workspace-launch-label span { font-size: 13px; color: var(--muted); }
     .app-card:disabled { cursor: progress; opacity: .72; }
     .app-icon { width: 118px; height: 118px; border-radius: var(--radius-sm); background: var(--panel); box-shadow: var(--shadow); display: grid; place-items: center; border: 1px solid color-mix(in srgb, var(--border) 72%, transparent); position: relative; transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease); }
     .app-card:hover .app-icon { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
@@ -3449,6 +3465,41 @@ function statusHtml() {
     const labels = { connected: "connecté", paused: "pause", reconnecting: "connexion", active: "actif", disconnected: "hors ligne", codex_unready: "codex à connecter", site_unreachable: "site inaccessible", cloud_stale: "à vérifier", local_unavailable: "local indisponible" };
     const codexLabels = { ready: "prêt", missing: "à installer", login_required: "connexion requise", error: "à vérifier", unknown: "inconnu" };
     function esc(value) { return String(value == null ? "" : value).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c])); }
+
+    /**
+     * Bridge ouvre l'espace de travail, une fois, et s'efface.
+     *
+     * Le panneau etait une grille : une vignette par service, a cliquer
+     * avant chaque session. C'etait un second endroit ou choisir son
+     * module, alors que l'espace en ligne porte deja les siens dans son
+     * rail lateral (CRM, Formation, Connaissance, Achat, Compta, et ceux
+     * qui viendront). Deux endroits pour la meme decision, dont un fige
+     * jusqu'au prochain redemarrage de Bridge.
+     *
+     * Le poste ne sert plus qu'a une chose : prefer l'abonnement Claude ou
+     * ChatGPT de la personne a l'espace en ligne, puis ouvrir cet espace.
+     *
+     * WORKSPACE_SERVICE_ID nomme le service qui porte l'espace. A defaut,
+     * on prend le premier service declare, pour qu'un poste configure
+     * autrement garde un bouton qui marche.
+     */
+    function workspaceLauncher(services) {
+      const declares = services || [];
+      const WORKSPACE_SERVICE_ID = "crm";
+      const workspace = declares.find(s => s.serviceId === WORKSPACE_SERVICE_ID) || declares[0];
+      if (!workspace) return '<p class="empty">Aucun espace de travail autorisé.</p>';
+
+      const status = workspace.status || "disconnected";
+      const busy = status === "active" || status === "reconnecting";
+      const label = busy ? "Ouverture…" : "Lancer";
+      return '<button class="workspace-launch ' + esc(status) + '" data-open="' + esc(workspace.serviceId) + '"' +
+        (busy ? " disabled" : "") +
+        ' title="' + esc(label + " " + workspace.name) + '" aria-label="' + esc(label + " " + workspace.name) + '">' +
+        '<span class="workspace-launch-icon" aria-hidden="true">' + appIcon(workspace) + '</span>' +
+        '<span class="workspace-launch-label"><strong>' + esc(label) + '</strong>' +
+        '<span>' + esc(workspace.name) + '</span></span>' +
+      '</button>';
+    }
     function render(state) {
       current = state;
       const provisioningRequired = Boolean(state.requiredProvisioning?.required);
@@ -3480,32 +3531,7 @@ function statusHtml() {
         }
       } else {
         setUiError(state.bridgeError || state.lastError || "");
-        services.innerHTML = state.services.length ? state.services.map(service => {
-        const status = service.status || "disconnected";
-        const actionLabel = status === "active" || status === "reconnecting"
-          ? "Ouverture..."
-          : status === "connected"
-            ? "Ouvrir"
-            : status === "codex_unready"
-              ? "Ouvrir"
-            : status === "cloud_stale"
-              ? "Reconnecter"
-            : service.lastSeenAt
-              ? "Reconnecter"
-              : "Connecter";
-        const actionAttr = 'data-open="' + esc(service.serviceId) + '"';
-        return '<button class="app-card ' + esc(status) + '" ' + actionAttr + ' title="' + esc(actionLabel + " " + service.name) + '" aria-label="' + esc(actionLabel + " " + service.name) + '">' +
-          '<span class="app-badge" aria-hidden="true"></span>' +
-          '<span class="app-icon" aria-hidden="true">' + appIcon(service) + '</span>' +
-          '<span class="app-label"><strong>' + esc(service.name) + '</strong></span>' +
-        '</button>';
-      // Bridge n'est pas un lanceur d'applications : il ouvre les services
-      // reellement declares, rien de plus. Quatre tuiles de remplissage
-      // (CRM, Reseaux, Formation, Compta) vivaient ici, grisees et inertes.
-      // Elles suggeraient des applications qui n'existaient pas, et le
-      // changement d'app se fait de toute facon dans l'interface du service
-      // une fois ouvert, par son rail lateral.
-      }).join("") : '<p class="empty">Aucune app autorisée.</p>';
+        services.innerHTML = workspaceLauncher(state.services);
         services.querySelectorAll("[data-open]").forEach(btn => {
           if (btn.dataset.bound === "1") return;
           btn.dataset.bound = "1";
