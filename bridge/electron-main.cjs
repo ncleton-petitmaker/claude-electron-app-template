@@ -3480,7 +3480,7 @@ function statusHtml() {
           '<span class="app-icon" aria-hidden="true">' + appIcon(service) + '</span>' +
           '<span class="app-label"><strong>' + esc(service.name) + '</strong></span>' +
         '</button>';
-      }).join("") + placeholderApps() : '<p class="empty">Aucune app autorisée.</p>';
+      }).join("") + placeholderApps(state.services) : '<p class="empty">Aucune app autorisée.</p>';
         services.querySelectorAll("[data-open]").forEach(btn => {
           if (btn.dataset.bound === "1") return;
           btn.dataset.bound = "1";
@@ -3570,14 +3570,23 @@ function statusHtml() {
       if (key.includes("achat") || key.includes("purchase") || key.includes("supplier")) return achatsLogoSvg();
       return iconGeneric(service.name || service.serviceId || "App");
     }
-    function placeholderApps() {
+    function placeholderApps(services = []) {
+      // Les quatre surfaces metier de Nicolas. Elles restent grisees tant
+      // qu'aucun service correspondant n'est declare dans bridge/config.ts :
+      // une tuile ne devient cliquable que si elle arrive par state.services.
+      //
+      // On retire du lot celles qui ont deja un vrai service : sans ce
+      // filtre, declarer le service CRM affichait deux tuiles CRM, une
+      // cliquable et une grise juste a cote.
+      const declares = new Set(
+        services.flatMap(s => [s.serviceId, s.name].filter(Boolean).map(v => String(v).toLowerCase()))
+      );
       const apps = [
-        { name: "Stock", key: "stock" },
-        { name: "Recrutement", key: "recruiting" },
         { name: "CRM", key: "crm" },
-        { name: "Connaissance", key: "knowledge" },
-        { name: "Flotte", key: "fleet" },
-      ];
+        { name: "Reseaux", key: "reseaux" },
+        { name: "Formation", key: "formation" },
+        { name: "Compta", key: "compta" },
+      ].filter(app => !declares.has(app.key) && !declares.has(app.name.toLowerCase()));
       return apps.map(app =>
         '<button class="app-card placeholder" disabled aria-label="' + esc(app.name + " indisponible") + '" title="' + esc(app.name + " indisponible") + '">' +
           '<span class="app-icon" aria-hidden="true">' + placeholderIcon(app.key) + '</span>' +
@@ -3586,11 +3595,13 @@ function statusHtml() {
       ).join("");
     }
     function placeholderIcon(key) {
-      if (key === "stock") return iconSvg('<path d="M48 16 76 32v32L48 80 20 64V32L48 16Z" fill="var(--icon-bg)"/><path d="M48 16 76 32 48 48 20 32 48 16Z" fill="var(--icon-accent)"/><path d="M48 48v32L20 64V32l28 16Z" fill="var(--icon-fg)"/><path d="M48 48v32l28-16V32L48 48Z" fill="var(--icon-fg)" opacity=".72"/>');
-      if (key === "recruiting") return iconSvg('<circle cx="48" cy="31" r="14" fill="var(--icon-fg)"/><path d="M23 76c4-17 14-26 25-26s21 9 25 26" fill="var(--icon-accent)"/><circle cx="25" cy="44" r="9" fill="var(--icon-fg)" opacity=".72"/><circle cx="72" cy="44" r="9" fill="var(--icon-accent)" opacity=".72"/>');
-      if (key === "crm") return iconSvg('<path d="M22 36h40c9 0 16 7 16 16v4H38c-9 0-16-7-16-16v-4Z" fill="var(--icon-accent)"/><path d="M54 36h20v18c0 8-6 14-14 14H40V50c0-8 6-14 14-14Z" fill="var(--icon-fg)"/><path d="M29 58 55 32" stroke="var(--icon-bg)" stroke-width="9" stroke-linecap="round" opacity=".9"/>');
-      if (key === "knowledge") return iconSvg('<path d="M26 22h28c9 0 16 7 16 16v36H34c-7 0-12-5-12-12V26c0-2 2-4 4-4Z" fill="var(--icon-fg)"/><path d="M34 30h26c6 0 10 4 10 10v34H40c-6 0-10-4-10-10V34c0-2 2-4 4-4Z" fill="var(--icon-accent)"/><path d="M40 43h18M40 55h22" stroke="var(--icon-bg)" stroke-width="5" stroke-linecap="round"/>');
-      if (key === "fleet") return iconSvg('<path d="M18 56 35 36h29l14 20v12H18V56Z" fill="var(--icon-accent)"/><path d="M36 36h18l8 20H26l10-20Z" fill="var(--icon-fg)"/><circle cx="34" cy="70" r="8" fill="var(--icon-fg)"/><circle cx="66" cy="70" r="8" fill="var(--icon-fg)"/><path d="M22 56h54" stroke="var(--icon-bg)" stroke-width="5" stroke-linecap="round" opacity=".72"/>');
+      // Meme langage que la tuile Achats : aplats sur une grille 96, trois
+      // teintes du theme (--icon-bg, --icon-accent, --icon-fg), pas de trait
+      // fin qui disparaitrait a la taille reelle de la tuile.
+      if (key === "crm") return iconSvg('<rect x="16" y="24" width="64" height="48" rx="12" fill="var(--icon-fg)"/><circle cx="39" cy="44" r="9" fill="var(--icon-bg)"/><path d="M25 64c1.6-9 7-13.5 14-13.5S51.4 55 53 64Z" fill="var(--icon-bg)"/><rect x="58" y="40" width="14" height="6" rx="3" fill="var(--icon-accent)"/><rect x="58" y="52" width="14" height="6" rx="3" fill="var(--icon-accent)"/>');
+      if (key === "reseaux") return iconSvg('<path d="M48 30 26 62M48 30l22 32M28 64h40" stroke="var(--icon-fg)" stroke-width="6" stroke-linecap="round" opacity=".45"/><circle cx="48" cy="26" r="11" fill="var(--icon-accent)"/><circle cx="24" cy="66" r="10" fill="var(--icon-fg)"/><circle cx="72" cy="66" r="10" fill="var(--icon-fg)"/>');
+      if (key === "formation") return iconSvg('<path d="M48 18 86 37 48 56 10 37 48 18Z" fill="var(--icon-accent)"/><path d="M28 45v17c0 6 9 11 20 11s20-5 20-11V45L48 56 28 45Z" fill="var(--icon-fg)"/><path d="M82 39v21" stroke="var(--icon-fg)" stroke-width="6" stroke-linecap="round"/>');
+      if (key === "compta") return iconSvg('<rect x="24" y="12" width="48" height="72" rx="12" fill="var(--icon-fg)"/><rect x="33" y="22" width="30" height="15" rx="5" fill="var(--icon-bg)"/><circle cx="37" cy="50" r="4.5" fill="var(--icon-accent)"/><circle cx="48" cy="50" r="4.5" fill="var(--icon-bg)"/><circle cx="59" cy="50" r="4.5" fill="var(--icon-bg)"/><circle cx="37" cy="63" r="4.5" fill="var(--icon-bg)"/><circle cx="48" cy="63" r="4.5" fill="var(--icon-bg)"/><circle cx="59" cy="63" r="4.5" fill="var(--icon-accent)"/><circle cx="37" cy="74" r="4.5" fill="var(--icon-bg)"/><circle cx="48" cy="74" r="4.5" fill="var(--icon-bg)"/><circle cx="59" cy="74" r="4.5" fill="var(--icon-bg)"/>');
       return iconGeneric("A");
     }
     function iconSvg(body) {

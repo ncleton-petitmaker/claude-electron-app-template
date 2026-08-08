@@ -123,7 +123,7 @@ class BridgeRuntime implements BridgeRuntimeHandle {
       this.cfg.userId = synced.account.userId;
       this.cfg.organizationId = synced.account.organizationId;
     }
-    if (synced.services?.length) this.cfg.services = synced.services;
+    if (synced.services?.length) this.cfg.services = mergeSyncedServices(this.cfg.services, synced.services);
     if (synced.erpBus) this.cfg.erpBus = synced.erpBus;
     if (synced.aiPolicy) {
       this.cfg.aiPolicy = synced.aiPolicy;
@@ -928,6 +928,32 @@ function mcpServerNameForService(service: BridgeServiceInstance): string {
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
   return clean || "yaka_bridge";
+}
+
+/**
+ * Fusionne les services renvoyes par le plan de controle avec ceux deja
+ * presents en local.
+ *
+ * La synchro faisait un remplacement pur : `cfg.services = synced.services`.
+ * Tout service declare localement disparaissait donc a la premiere synchro,
+ * en silence. C'est exactement le cas d'un service local de developpement,
+ * sur 127.0.0.1, que le plan de controle ne peut pas connaitre : on le
+ * configurait, la tuile apparaissait, puis elle s'evaporait.
+ *
+ * Le plan de controle reste autoritaire : a identifiant egal, c'est sa
+ * version qui gagne. Seuls survivent les services qu'il ne mentionne pas.
+ *
+ * Ca n'ouvre aucun droit. Une tuile ne fait qu'ouvrir une URL, et tout ce
+ * qui compte, billets de lancement, jobs et portees, est verifie cote
+ * serveur a chaque appel : un service local que le plan de controle ignore
+ * echoue a l'ouverture au lieu de contourner quoi que ce soit.
+ */
+function mergeSyncedServices(
+  local: BridgeServiceInstance[],
+  synced: BridgeServiceInstance[],
+): BridgeServiceInstance[] {
+  const known = new Set(synced.map((service) => service.serviceId));
+  return [...synced, ...local.filter((service) => !known.has(service.serviceId))];
 }
 
 function mcpDataDirEnvVarForService(service: BridgeServiceInstance): string {
