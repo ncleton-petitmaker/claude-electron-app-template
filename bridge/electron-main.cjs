@@ -2936,6 +2936,42 @@ async function ensureRequiredProvisioningComplete(reason = "action") {
   return { ok: true };
 }
 
+/**
+ * Demande au service d'ouvrir une session, avec le jeton que Bridge detient
+ * pour lui.
+ *
+ * Le jeton vit dans la configuration du service, jamais dans une URL et
+ * jamais chez l'utilisateur. Il est revocable depuis le service, ce qui
+ * fait de Bridge un porteur d'identite delegue plutot qu'un coffre a mots
+ * de passe.
+ *
+ * Renvoie l'adresse a ouvrir, ou null : un echec ici n'empeche pas
+ * l'ouverture, il la laisse simplement passer par l'ecran de connexion.
+ */
+async function openDirectSession(service) {
+  const token = service?.serviceToken;
+  const base = service?.launchCallbackUrl || service?.healthUrl || service?.baseUrl;
+  if (!token || !base) return null;
+  try {
+    const endpoint = new URL("/bridge/session", base);
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+      body: JSON.stringify({ returnTo: "/" }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.ok || !data?.url) {
+      pushActivity(`${service.name}: session directe refusee (${data?.error || res.status}).`);
+      return null;
+    }
+    return cleanExternalUrl(data.url);
+  } catch (err) {
+    pushActivity(`${service.name}: session directe indisponible (${err?.message || err}).`);
+    return null;
+  }
+}
+
 async function openService(serviceId, options = {}) {
   let cfg = loadConfig();
   let service = cfg.services.find((candidate) => candidate.serviceId === serviceId);
@@ -3003,6 +3039,19 @@ async function openService(serviceId, options = {}) {
     }
     if (usesLaunchTicket && cfg.controlPlaneBaseUrl) {
       target = appendQueryParam(target, "bridgeControlPlaneUrl", cfg.controlPlaneBaseUrl);
+    }
+    // Pas de billet, mais un jeton de service : le service sait ouvrir une
+    // session pour le compte qu'il a lui-meme designe. C'est le cas d'un
+    // service local, que le plan de controle ne connait pas. Sans ca,
+    // Bridge ouvrait l'URL nue et l'utilisateur tombait sur un ecran de
+    // connexion, alors que porter l'identite a sa place est justement la
+    // raison d'etre du Bridge.
+    if (!usesLaunchTicket) {
+      const direct = await openDirectSession(service);
+      if (direct) {
+        target = direct;
+        pushActivity(`${service.name}: session ouverte par jeton de service.`);
+      }
     }
     target = appendQueryParam(target, "browserSessionId", browserSessionId);
     await shell.openExternal(target);
