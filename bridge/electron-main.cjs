@@ -2745,10 +2745,32 @@ function clearExpiredBridgeSession(cfg, reason) {
   pushActivity(reason);
 }
 
+/**
+ * Fusionne les services du plan de controle avec ceux declares localement.
+ *
+ * Le plan de controle reste autoritaire : a identifiant egal, sa version
+ * gagne. Seuls survivent les services qu'il ne mentionne pas, typiquement
+ * un service local sur 127.0.0.1 qu'il ne peut pas connaitre.
+ *
+ * Sans ca, `cfg.services = res.services` effacait ces services a chaque
+ * synchro, en silence : on declarait un service local, sa tuile
+ * apparaissait, et elle disparaissait a la synchro suivante sans qu'aucun
+ * message ne le dise.
+ *
+ * Aucun droit n'est accorde ici. Une tuile ouvre une URL ; les billets de
+ * lancement, les jobs et les portees restent verifies par le plan de
+ * controle a chaque appel, donc un service local qu'il ignore echoue a
+ * l'ouverture au lieu de contourner quoi que ce soit.
+ */
+function mergeControlPlaneServices(local, remote) {
+  const known = new Set(remote.map((service) => service.serviceId));
+  return [...remote, ...(Array.isArray(local) ? local : []).filter((service) => !known.has(service.serviceId))];
+}
+
 async function syncServicesFromControlPlane(cfg) {
   await refreshSupabaseSessionIfNeeded(cfg);
   const res = await postControlPlane(cfg, "bridge/sync", localStatusPayload());
-  if (Array.isArray(res.services)) cfg.services = res.services;
+  if (Array.isArray(res.services)) cfg.services = mergeControlPlaneServices(cfg.services, res.services);
   if (res.account) {
     cfg.account = res.account;
     cfg.userId = res.account.userId;
