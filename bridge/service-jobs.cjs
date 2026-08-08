@@ -57,6 +57,10 @@ function argumentsMcp(payload) {
   const racine = path.resolve(__dirname, "..");
   const bundle = [
     process.env.BRIDGE_MCP_PATH,
+    // Dans l'app empaquetee, le bundle du MCP est pose a cote de ce
+    // fichier, dans l'archive asar. C'est le cas nominal en production ;
+    // l'oublier laissait l'agent tourner sans acces aux donnees.
+    path.join(__dirname, "mcp.cjs"),
     path.join(racine, "dist", "mcp.cjs"),
     path.join(racine, "mcp.cjs"),
   ].filter(Boolean).find((c) => fs.existsSync(c));

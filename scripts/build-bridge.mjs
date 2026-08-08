@@ -30,7 +30,18 @@ for (const [entry, outfile, externalPackages] of [
   });
 }
 
-for (const file of ["electron-main.cjs", "bridge-preload.cjs", "provider-setup.cjs", "theme.cjs", "design-system.json"]) {
+// La liste est explicite : un fichier oublie ici n'echoue pas au build, il
+// manque simplement a l'execution. service-jobs.cjs a fait le cas : la
+// boucle de travaux tournait depuis les sources et disparaissait dans l'app
+// empaquetee, ou l'assistant restait muet sans qu'aucune erreur ne l'annonce.
+for (const file of [
+  "electron-main.cjs",
+  "bridge-preload.cjs",
+  "provider-setup.cjs",
+  "theme.cjs",
+  "service-jobs.cjs",
+  "design-system.json",
+]) {
   await copyFile(resolve(root, "bridge", file), resolve(outdir, file));
 }
 if (existsSync(resolve(root, "public", "bridge-mark.png"))) {
