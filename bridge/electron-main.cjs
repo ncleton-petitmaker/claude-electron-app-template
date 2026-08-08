@@ -19,6 +19,7 @@ const {
   voiceModelPath,
 } = require("./provider-setup.cjs");
 const { bridgeDesignCss, loadBridgeDesign } = require("./theme.cjs");
+const { demarrerBoucleTravaux } = require("./service-jobs.cjs");
 
 let autoUpdater = null;
 try {
@@ -184,6 +185,15 @@ app.whenReady().then(() => {
     scheduleStartupAdminProvisioning();
     setInterval(refreshExternalStatuses, 15_000);
     setInterval(scheduleLocalAiStatusRefresh, 15_000);
+    // Boucle de travaux : les services en ligne qui hebergent leur propre
+    // file (le CRM) sont interroges ici, et leurs travaux executes avec
+    // l'abonnement de ce poste. Cf. bridge/service-jobs.cjs.
+    demarrerBoucleTravaux({
+      lireServices: () => loadConfig().services ?? [],
+      findCodexBin: findInstalledCodexBin,
+      dataDir: DATA_DIR,
+      journal: pushActivity,
+    });
   });
 });
 
