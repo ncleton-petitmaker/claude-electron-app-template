@@ -65,6 +65,7 @@ import {
   type AuditEventInput,
 } from "./audit-log.js";
 import { callAction, listActions, type ActionContext } from "./actions.js";
+import { erpModules } from "../modules/registry.js";
 import { allowedRunRoots, assertInsideRoots } from "./path-guard.js";
 import { getSupabasePublicConfig, getSupabaseServerClient } from "./supabase.js";
 import {
@@ -216,17 +217,62 @@ function buildAddDirs(dataDir: string, cfg: AppConfig): string[] {
   return Array.from(dirs);
 }
 
+/**
+ * Contexte d'operateur pour le developpement local.
+ *
+ * En mode local il n'y a pas de session Supabase, donc ni organisation ni
+ * entitlements : toute action portant `requiredServiceScopes` repondait
+ * `organization-required`. Autrement dit, developper un module dont les
+ * actions sont scopees demandait de monter un stack cloud complet.
+ *
+ * Quand BRIDGE_ORGANIZATION_ID est explicitement renseigne, on fabrique
+ * l'operateur local correspondant, avec les portees que les modules du
+ * registre declarent eux-memes. Pas de role admin : les portees sont
+ * accordees nommement, donc une action qui en exige une non declaree echoue
+ * en local comme elle echouerait en production.
+ *
+ * Trois garde-fous, dans cet ordre :
+ *  - inatteignable des que REQUIRE_AUTH=1, ou la session Supabase reste la
+ *    seule source d'autorite ;
+ *  - opt-in par variable d'environnement, jamais un defaut silencieux ;
+ *  - sans elargissement de confiance : en local le daemon n'ecoute que la
+ *    boucle locale et exige deja APP_DAEMON_TOKEN, donc l'appelant peut
+ *    deja invoquer toutes les actions non scopees.
+ */
+function localOperatorContext(): Pick<
+  ActionContext,
+  "userId" | "organizationId" | "membershipRole" | "entitlements"
+> | null {
+  if (isCloudAuthRequired()) return null;
+  const organizationId = process.env.BRIDGE_ORGANIZATION_ID?.trim();
+  if (!organizationId) return null;
+
+  return {
+    userId: process.env.BRIDGE_LOCAL_USER_ID?.trim() ?? "local-operator",
+    organizationId,
+    membershipRole: "member",
+    entitlements: erpModules
+      .filter((module) => module.bridgeService?.serviceId)
+      .map((module) => ({
+        service_id: module.bridgeService!.serviceId,
+        enabled: true,
+        scopes: module.scopes ?? [],
+      })),
+  };
+}
+
 function actionContext(c: { req: { header: (k: string) => string | undefined; raw: { signal: AbortSignal } } }): ActionContext {
   const a = getActor(c);
   const authz = getAuthz(c as any);
+  const local = authz ? null : localOperatorContext();
   return {
     dataDir: DATA_DIR,
     actorId: a.actor_id,
     actorRole: a.actor_role,
-    userId: authz?.user.id,
-    organizationId: authz?.organizationId,
-    membershipRole: authz?.membership.role,
-    entitlements: authz?.entitlements,
+    userId: authz?.user.id ?? local?.userId,
+    organizationId: authz?.organizationId ?? local?.organizationId,
+    membershipRole: authz?.membership.role ?? local?.membershipRole,
+    entitlements: authz?.entitlements ?? local?.entitlements,
     appVersion: APP_VERSION,
     clientIp: c.req.header("x-forwarded-for") ?? c.req.header("x-real-ip") ?? "local",
     signal: c.req.raw.signal,
