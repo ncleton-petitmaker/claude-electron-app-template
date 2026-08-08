@@ -176,6 +176,7 @@ app.whenReady().then(() => {
     registerBridgeProtocol();
     createTray();
     if (!launchedByProtocol) showStatusWindow({ focus: true });
+    poserIconeDock();
     startRuntimeIfAvailable();
     startAutoUpdates();
     startCloudHeartbeat();
@@ -472,6 +473,31 @@ function trayIconPath() {
     if (fs.existsSync(candidate)) return candidate;
   }
   return null;
+}
+
+/**
+ * Pose l'icone du Dock quand l'app tourne depuis les sources.
+ *
+ * Une app empaquetee tient son icone de son bundle, mais lancee par le
+ * binaire Electron elle porte celle d'Electron : on ne reconnait plus le
+ * Bridge parmi les fenetres ouvertes, et le Dock affiche un logo qui n'est
+ * pas le sien. L'icone de la barre de menus, elle, est monochrome par
+ * convention macOS et ne remplace pas celle du Dock.
+ */
+function poserIconeDock() {
+  if (process.platform !== "darwin" || !app.dock) return;
+  const candidat = [
+    path.join(__dirname, "..", "public", "icon-1024.png"),
+    path.join(__dirname, "..", "public", "icon-512.png"),
+    path.join(__dirname, "..", "..", "public", "icon-512.png"),
+  ].find((c) => fs.existsSync(c));
+  if (!candidat) return;
+  try {
+    const image = nativeImage.createFromPath(candidat);
+    if (!image.isEmpty()) app.dock.setIcon(image);
+  } catch {
+    // Une icone manquante ne doit pas empecher l'app de demarrer.
+  }
 }
 
 function createTray() {
