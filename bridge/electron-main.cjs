@@ -2957,7 +2957,10 @@ async function openDirectSession(service) {
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-      body: JSON.stringify({ returnTo: "/" }),
+      // Pas de returnTo : la porte d'entree apres connexion appartient au
+      // service (defaultReturnTo de son profil). Le CRM web, par exemple,
+      // recupere ses jetons sur /session ; imposer "/" ici les perdrait.
+      body: JSON.stringify({}),
       signal: AbortSignal.timeout(8000),
     });
     const data = await res.json().catch(() => ({}));
