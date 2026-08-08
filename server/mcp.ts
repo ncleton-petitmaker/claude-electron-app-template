@@ -17,6 +17,16 @@ const APP_VERSION = cleanVersion(
 );
 const MCP_PROXY_BASE_URL = process.env.BRIDGE_MCP_PROXY_BASE_URL?.replace(/\/+$/, "") ?? "";
 const MCP_PROXY_ACCESS_TOKEN = process.env.BRIDGE_MCP_PROXY_ACCESS_TOKEN ?? "";
+/**
+ * Chemin du contrat d'actions chez le service distant.
+ *
+ * Les apps nees du template exposent /api/actions. Un service existant qui
+ * rejoint Bridge a deja sa propre surface et ne peut pas toujours renommer la
+ * sienne : le CRM, par exemple, a deja un /api/actions qui sert un ecran. Le
+ * chemin se declare donc, au lieu d'obliger chaque service a se plier au nom.
+ */
+const MCP_PROXY_ACTIONS_PATH =
+  process.env.BRIDGE_MCP_PROXY_ACTIONS_PATH?.replace(/\/+$/, "") || "/api/actions";
 
 interface JsonRpcRequest {
   jsonrpc?: "2.0";
@@ -51,7 +61,7 @@ async function toolsList() {
 }
 
 async function proxyToolsList() {
-  const res = await fetch(`${MCP_PROXY_BASE_URL}/api/actions`, {
+  const res = await fetch(`${MCP_PROXY_BASE_URL}${MCP_PROXY_ACTIONS_PATH}`, {
     headers: proxyHeaders(),
   });
   if (!res.ok) throw new Error(`Registry actions indisponible (${res.status})`);
@@ -147,7 +157,7 @@ async function handle(req: JsonRpcRequest) {
 
 async function proxyCallAction(actionId: string, args: unknown) {
   if (!MCP_PROXY_ACCESS_TOKEN) throw new Error("Token Bridge manquant pour appeler le service MCP proxy.");
-  const res = await fetch(`${MCP_PROXY_BASE_URL}/api/actions/${encodeURIComponent(actionId)}`, {
+  const res = await fetch(`${MCP_PROXY_BASE_URL}${MCP_PROXY_ACTIONS_PATH}/${encodeURIComponent(actionId)}`, {
     method: "POST",
     headers: proxyHeaders({ json: true }),
     body: JSON.stringify(args ?? {}),

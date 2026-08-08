@@ -212,6 +212,8 @@ export interface BuildArgsOptions {
   mcpProxyBaseUrl?: string;
   /** Jeton Bearer utilisé par le proxy MCP pour appeler le service web. */
   mcpProxyAccessToken?: string;
+  /** Chemin du contrat d'actions chez le service, si different de /api/actions. */
+  mcpProxyActionsPath?: string;
   /** Nom du serveur MCP expose a Codex pour ce service. */
   mcpServerName?: string;
   /** Nom de variable env qui pointe vers le dataDir du service. */
@@ -287,6 +289,9 @@ function buildMcpOverrides(opts: BuildArgsOptions = {}): string[] {
   }
   if (opts.mcpProxyAccessToken) {
     env.BRIDGE_MCP_PROXY_ACCESS_TOKEN = opts.mcpProxyAccessToken;
+  }
+  if (opts.mcpProxyActionsPath) {
+    env.BRIDGE_MCP_PROXY_ACTIONS_PATH = opts.mcpProxyActionsPath;
   }
   if (isPackaged) {
     env.ELECTRON_RUN_AS_NODE = process.env.ELECTRON_RUN_AS_NODE ?? "1";

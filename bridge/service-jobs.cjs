@@ -38,6 +38,59 @@ function nomDuPoste() {
   return `${os.hostname()}`.slice(0, 100);
 }
 
+/**
+ * Declare le serveur MCP de Bridge aupres de codex.
+ *
+ * C'est cette declaration qui donne a l'agent l'acces aux donnees du service.
+ * Sans elle, il tourne quand meme, repond quand meme, mais sans rien pouvoir
+ * lire : la premiere version de cette boucle posait les variables
+ * d'environnement du proxy sans declarer le serveur, et l'agent repondait
+ * « aucune connexion au CRM disponible » tout en ayant l'air de fonctionner.
+ * Une panne de ce genre se lit comme une hallucination du modele.
+ *
+ * `required=true` est volontaire : mieux vaut un travail en echec explicite
+ * qu'une reponse inventee faute de donnees.
+ */
+function argumentsMcp(payload) {
+  if (!payload.mcpProxyBaseUrl || !payload.mcpProxyAccessToken) return [];
+
+  const racine = path.resolve(__dirname, "..");
+  const bundle = [
+    process.env.BRIDGE_MCP_PATH,
+    path.join(racine, "dist", "mcp.cjs"),
+    path.join(racine, "mcp.cjs"),
+  ].filter(Boolean).find((c) => fs.existsSync(c));
+
+  const source = path.join(racine, "server", "mcp.ts");
+  if (!bundle && !fs.existsSync(source)) return [];
+
+  const commande = bundle ? process.execPath : "npx";
+  const args = bundle ? [bundle] : ["tsx", source];
+
+  const env = {
+    BRIDGE_MCP_PROXY_BASE_URL: payload.mcpProxyBaseUrl,
+    BRIDGE_MCP_PROXY_ACCESS_TOKEN: payload.mcpProxyAccessToken,
+    ...(payload.mcpProxyActionsPath
+      ? { BRIDGE_MCP_PROXY_ACTIONS_PATH: payload.mcpProxyActionsPath }
+      : {}),
+    ...(bundle ? { ELECTRON_RUN_AS_NODE: process.env.ELECTRON_RUN_AS_NODE ?? "1" } : {}),
+  };
+
+  const nom = "bridge";
+  return [
+    "-c", `mcp_servers.${nom}.command=${JSON.stringify(commande)}`,
+    "-c", `mcp_servers.${nom}.args=${JSON.stringify(args)}`,
+    ...Object.entries(env).flatMap(([k, v]) => [
+      "-c", `mcp_servers.${nom}.env.${k}=${JSON.stringify(v)}`,
+    ]),
+    "-c", `mcp_servers.${nom}.enabled=true`,
+    "-c", `mcp_servers.${nom}.required=true`,
+    "-c", `mcp_servers.${nom}.startup_timeout_sec=20`,
+    "-c", `mcp_servers.${nom}.tool_timeout_sec=120`,
+    "-c", `mcp_servers.${nom}.default_tools_approval_mode="approve"`,
+  ];
+}
+
 async function appel(service, chemin, corps) {
   const base = service.launchCallbackUrl || service.healthUrl || service.baseUrl;
   const url = new URL(chemin, base);
@@ -109,6 +162,7 @@ function executerAvecCodex({ binaire, payload, cwd, onFragment }) {
     if (Array.isArray(payload.imageUrls)) {
       for (const img of payload.imageUrls) args.push("--image", img);
     }
+    args.push(...argumentsMcp(payload));
 
     const env = { ...process.env };
     if (payload.mcpProxyBaseUrl) env.BRIDGE_MCP_PROXY_BASE_URL = payload.mcpProxyBaseUrl;
