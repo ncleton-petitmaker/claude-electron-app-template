@@ -36,6 +36,24 @@ if (start === -1 || end === -1) {
 }
 
 const script = html.slice(start + "<script>".length, end);
+
+// Un accent grave non echappe referme la chaine de gabarit qui porte tout
+// le panneau. Le reste du fichier part alors en vrac, souvent loin d'ici,
+// et l'erreur ne designe pas le coupable. Le cas le plus traitre est un
+// accent grave dans un commentaire, ou il a l'air inoffensif.
+const backticksNus = script.split("\n").flatMap((ligne, i) => {
+  const nus = ligne.replace(/\\`/g, "").includes("`");
+  return nus ? [`  ligne ${i + 1} : ${ligne.trim().slice(0, 90)}`] : [];
+});
+if (backticksNus.length) {
+  console.error(
+    `${SOURCE}: accent grave non echappe dans le script du panneau.\n` +
+      "Il referme la chaine de gabarit. L'echapper (\\`) ou employer un guillemet.\n" +
+      backticksNus.join("\n"),
+  );
+  process.exit(1);
+}
+
 if (script.includes("${")) {
   console.error(
     `${SOURCE}: le script du panneau interpole du gabarit (\${...}).\n` +

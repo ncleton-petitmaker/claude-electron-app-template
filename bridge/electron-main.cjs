@@ -3490,10 +3490,16 @@ function statusHtml() {
       if (!workspace) return '<p class="empty">Aucun espace de travail autorisé.</p>';
 
       const status = workspace.status || "disconnected";
-      const busy = status === "active" || status === "reconnecting";
-      const label = busy ? "Ouverture…" : "Lancer";
+      // Le statut "active" veut dire espace deja ouvert, pas ouverture en
+      // cours : openService le pose au succes et ne le retire jamais.
+      // Desactiver le bouton dessus le verrouillait des le premier clic,
+      // pour toute la session. Seul "reconnecting" est un etat de
+      // transition, et le gestionnaire de clic desactive deja le bouton
+      // pendant l'appel.
+      // (Pas d'accent grave dans ce commentaire : tout le panneau vit dans
+      // une chaine de gabarit, un accent grave la refermerait ici.)
+      const label = status === "reconnecting" ? "Ouverture…" : status === "active" ? "Rouvrir" : "Lancer";
       return '<button class="workspace-launch ' + esc(status) + '" data-open="' + esc(workspace.serviceId) + '"' +
-        (busy ? " disabled" : "") +
         ' title="' + esc(label + " " + workspace.name) + '" aria-label="' + esc(label + " " + workspace.name) + '">' +
         '<span class="workspace-launch-icon" aria-hidden="true">' + appIcon(workspace) + '</span>' +
         '<span class="workspace-launch-label"><strong>' + esc(label) + '</strong>' +
